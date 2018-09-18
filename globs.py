@@ -63,10 +63,17 @@ C_dp = 0.0251  # Blade average drag coefficient
 #  Equivalent Flat Plate Area
 sum_cds = 4.23  # This is the Equivalent Flat Plate Area estimated from pg 52 of reader
 
+# TODO consider making use of https://docs.python.org/2/library/trace.html for dependency tracking
+
 
 class Attribute(property):
     """ A decorator that is used for lazy evaluation of an object attribute.
-    property should represent immutable data, as it replaces itself. """
+    property should represent immutable data, as it replaces itself.
+
+    .. NOTE: I AM NOT THE ORIGINAL AUTHOR, THIS IS FROM JACK MANEY'S REPO
+
+    https://github.com/jackmaney/lazy-property/blob/master/lazy_property/__init__.py
+    """
 
     # __slots__ = ['method', '__name__', 'cache_name', 'fget', 'fset', 'fdel', 'doc']
 
