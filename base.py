@@ -27,45 +27,6 @@ __author__ = 'San Kilkis'
 # TODO make engine specs loader from .cfg
 
 
-class Entry(object):
-
-    __slots__ = ['value', 'unit']
-
-    def __init__(self, value, unit=None):
-        self.value = value
-        self.unit = unit
-
-    def __get__(self, instance, owner):
-        return self.value
-
-    def __repr__(self):
-        return '%1.4f [%s]' % (self.value, self.unit)
-
-    def __add__(self, other):
-        return self.value + other
-
-    def __sub__(self, other):
-        return self.value - other
-
-    def __div__(self, other):
-        return self.value / other
-
-    def __mul__(self, other):
-        return self.value * other
-
-    def __eq__(self, other):
-        return self.value == other
-
-    def __float__(self):
-        return self.value
-
-    def __int__(self):
-        return self.value
-
-    def __abs__(self):
-        return self.value
-
-
 class Base(object):
 
     """ An OOP Version of the above constants to use for the following part of this assignment, supporting lazy

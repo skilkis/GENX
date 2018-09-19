@@ -4,12 +4,21 @@
 """ Contains all abstract class definitions  """
 
 from base import Base
-from utils import Attribute
+from utils import Attribute, Unassigned
 
 __author__ = 'San Kilkis'
 
 
 class FlowCondition(Base):
+
+    # Providing dummy attributes for the debugger, these are partially overwritten at run-time by the Attributes below
+    mass_flow = Unassigned('mass_flow')
+    mach = Unassigned('mach')
+    t_static = Unassigned('t_static')
+    t_total = Unassigned('t_total')
+    p_static = Unassigned('p_static')
+    p_total = Unassigned('p_total')
+    medium = Unassigned('medium')
 
     def __init__(self, **kwargs):
         """
@@ -19,14 +28,12 @@ class FlowCondition(Base):
         :param float t_static:
         :param float p_static:
         :param str medium:
+        :param float t_total:
+        :param float p_total:
         """
         for key, value in zip(kwargs.keys(), kwargs.values()):
-            self.key = value
-        # self.mass_flow = self.assert_float(mass_flow)
-        # self.mach = self.assert_float(mach)
-        # self.t_static = self.assert_float(t_static)
-        # self.p_static = self.assert_float(p_static)
-        # self.medium = medium
+            command = 'self.{} = {}'.format(key, "'{}'".format(value) if type(value) is str else value)
+            exec command
 
     @Attribute
     def kappa(self):
@@ -40,11 +47,29 @@ class FlowCondition(Base):
 
     @Attribute
     def t_total(self):
-        return self.t_static * (1 + (((self.kappa - 1) / 2.) * self.mach**2))
+        return self.t_static * self.t_ratio
 
     @Attribute
     def p_total(self):
-        return self.p_static * ((1 + (((self.kappa - 1) / 2.) * self.mach**2))**(self.kappa / (self.kappa - 1)))
+        return self.p_static * self.p_ratio
+
+    @Attribute
+    def t_static(self):
+        return self.t_total / self.t_ratio
+
+    @Attribute
+    def p_static(self):
+        return self.p_total / self.p_ratio
+
+    @Attribute
+    def t_ratio(self):
+        """ Total Temperature to Static Temperature Ratio """
+        return 1 + (((self.kappa - 1) / 2.) * self.mach**2)
+
+    @Attribute
+    def p_ratio(self):
+        """ Total Pressure to Static Pressure Ratio """
+        return (1 + (((self.kappa - 1) / 2.) * self.mach**2))**(self.kappa / (self.kappa - 1))
 
     @staticmethod
     def assert_float(entry):
@@ -52,6 +77,5 @@ class FlowCondition(Base):
 
 
 if __name__ == '__main__':
-    obj = FlowCondition(mach=0.8, t_static=216., p_static=22632, medium='air')
+    obj = FlowCondition(t_static=216., medium='air')
     print(obj.t_total)
-    # print(obj.p_total)
