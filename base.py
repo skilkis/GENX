@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" Provides all derived/non-derived inputs of the CH-53D Helicopter to be used later in performance calculations """
+""" Provides all derived/non-derived inputs of to be used later in performance calculations """
 
 from utils import Attribute
 import os
@@ -36,8 +36,8 @@ class Base(object):
     __instance__ = None
 
     def __new__(cls, *args, **kwargs):
-        """ Stops the constants class from initializing more than once, if an instance exists in the current process
-        that instance is simply returned """
+        """ Stops the :py:class:`Base` from instantiating more than once, if an instance exists in the current process
+        that instance is then returned as a pointer for all other sub-classes. """
         if cls.__instance__ is None:
             cls.__instance__ = super(Base, cls).__new__(cls, *args, **kwargs)
         return cls.__instance__
