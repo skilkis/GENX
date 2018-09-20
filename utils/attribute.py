@@ -1,3 +1,5 @@
+
+
 class Attribute(object):
     """ A decorator that is used for lazy evaluation of an object attribute.
     property should represent immutable data, as it replaces itself.
@@ -21,13 +23,13 @@ class Attribute(object):
     #     super(self.__class__, self).__init__(fget=fget, fset=fset, fdel=fdel, doc=doc)
     #
     #     update_wrapper(self, method)
-
-    def __get__(self, instance, owner=None):
-        if instance is None:
-            return self
-        value = self.method(instance)
-        setattr(instance, self.__name__, value)
-        return value
+#
+#     def __get__(self, instance, owner):
+#         if instance is None:
+#             return self
+#         value = self.method(instance)
+#         setattr(instance, self.__name__, value)
+#         return value
 
     # def __get__(self, instance, owner=None):
     #

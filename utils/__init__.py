@@ -1,3 +1,3 @@
 from print_progress import ProgressBar
 from attribute import Attribute
-from unassigned import Unassigned
+from undefined import Undefined

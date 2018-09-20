@@ -17,29 +17,29 @@ except ImportError:
 
 
 __author__ = 'San Kilkis'
+__all__ = ['Constants', 'Attribute']
 
 # working_dir = os.path.dirname(os.path.realpath(__file__))
 
-# TODO Remove the following attributes and put them into OOP for lazy-evaluation
-
 # TODO consider making use of https://docs.python.org/2/library/trace.html for dependency tracking
 
-# TODO make engine specs loader from .cfg
 
-
-class Base(object):
+class Constants(object):
 
     """ An OOP Version of the above constants to use for the following part of this assignment, supporting lazy
      evaluation where not every attribute or property will be triggered at run-time, thus increasing performance """
 
-    __engine_file__ = 'data\GE90.cfg'
     __instance__ = None
+    __engine_file__ = 'data/GE90.cfg'
+
+    # def __init__(self, data_file=None):
+    #     self.data_file = data_file
 
     def __new__(cls, *args, **kwargs):
         """ Stops the :py:class:`Base` from instantiating more than once, if an instance exists in the current process
         that instance is then returned as a pointer for all other sub-classes. """
         if cls.__instance__ is None:
-            cls.__instance__ = super(Base, cls).__new__(cls, *args, **kwargs)
+            cls.__instance__ = super(Constants, cls).__new__(cls, *args, **kwargs)
         return cls.__instance__
 
     @Attribute
@@ -83,24 +83,29 @@ class Base(object):
         return 1.33
 
     @Attribute
+    def lower_heating_value(self):
+        """ Lower Heating Value (LHV) of Kerosene in SI Mega Joule [MJ] """
+        return 43. * 10e6
+
+    @Attribute
     def engine_data(self):
         if self.__engine_file__ is None:
             selected_engine = raw_input("Provide an engine file for computations: ")
             selected_engine = selected_engine if selected_engine.endswith('.cfg') else selected_engine + '.cfg'
             engine_files = os.listdir('data')
             if selected_engine in engine_files:
-                self.__engine_file__ = os.path.join('data', selected_engine)
+                self.data_file = os.path.join('data', selected_engine)
             else:
                 raise IOError("No file named '{}' could be found within 'data'".format(selected_engine))
         cfg = config.SafeConfigParser()
-        cfg.read(self.__engine_file__)
+        cfg.read(self.data_file)
         return cfg._sections.copy()
 
 
 if __name__ == '__main__':
-    obj = Base()
+    obj = Constants()
     print(obj.engine_data['ambient_conditions']['t_static'])
-    obj2 = Base()
+    obj2 = Constants()
     print(obj2.__instance__)
     # print(obj.g)
     # print(obj.rho_sl)

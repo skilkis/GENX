@@ -1,4 +1,4 @@
-class Unassigned(object):
+class Undefined(object):
 
     __slots__ = ['__name__', 'value']
 
@@ -7,7 +7,7 @@ class Unassigned(object):
         self.value = None
 
     def __get__(self, instance, owner):
-        raise self.error_msg()
+        return self.error_msg()
 
     def __repr__(self):
         raise self.error_msg()
