@@ -40,7 +40,7 @@ class FlowCondition(Constants):
         :param str medium:
         :param float t_total:
         :param float p_total:
-        :param float density: Density of the substance
+        :param float rho: Density of the substance in SI kilogram per meter cubed [kg/m^3]
         :param str station_number:
         """
         self.__kwargs__ = kwargs
@@ -55,7 +55,12 @@ class FlowCondition(Constants):
     @Attribute
     def velocity(self):
         """ Computes flow velocity from the mach number if available in SI meter per second [m/s] """
-        return self.mach * sqrt(self.kappa * self.gas_constant)
+        return self.mach * sqrt(self.kappa * self.gas_constant * self.t_static)
+
+    @Attribute
+    def rho(self):
+        """ Computes the density from the static pressure and temperature in SI kilogram per meter cubed [kg/m^3] """
+        return self.p_static / (self.gas_constant * self.t_static)
 
     @Attribute
     def kappa(self):

@@ -12,6 +12,7 @@ __author__ = 'San Kilkis'
 
 class Nozzle(Stage):
 
+    # TODO finish documentation
     def __init__(self, inflow, ambient, eta, nozzle_type, station_number):
         """ TEST LALALAL
 
@@ -19,7 +20,7 @@ class Nozzle(Stage):
         :param FlowCondition ambient: Ambient flow conditions
         :param eta: Nozzle efficiency
         :param str nozzle_type: Specifies the geometry of the nozzle
-        :param tuple station_number: Station number corresponding to before and after the nozzle throat
+        :param collections.Sequence[str, str] station_number: Station number before and after the nozzle throat
         """
 
         self.inflow = inflow
@@ -53,21 +54,11 @@ class Nozzle(Stage):
     def choked(self):
         """ Boolean switch case that returns ``True`` if the flow is chocked else ``False`` """
         if self.p_total > self.p_critical:
-            print('{}: Nozzle is choked! Total pressure {} [Pa]'
-                  ' exceeds critical pressure of {} [Pa]'.format(self, self.p_total, self.p_critical))
+            # print('{}: Nozzle is choked! Total pressure {} [Pa]'
+            #       ' exceeds critical pressure of {} [Pa]'.format(self, self.p_total, self.p_critical))
             return True
         else:
             raise ValueError('Nozzle is not choked thus the mach number at the exit is not known, stopping calculation')
-
-    @property
-    def work_output(self):
-        """ Convenience property that represents the work output of the :class:`Turbine` in SI Watt [W]. This quantity
-        is equivalent to the work required to drive the compressor(s) on the same spool (mechanical losses are already
-        accounted for in :class:`Spool`.
-
-        :rtype: float
-        """
-        return None
 
     @property
     def t_total(self):
@@ -104,6 +95,40 @@ class Nozzle(Stage):
         return self.p_total / self.critical_ratio
 
     @property
+    def throat_area(self):
+        """ Cross-sectional area of the nozzle throat in SI meter squared [m^2]
+
+        :rtype: float
+        """
+        return self.outflow.mass_flow / (self.outflow.rho * self.outflow.velocity)
+
+    @property
+    def momentum_thrust(self):
+        """ Thrust produced by the nozzle due to the momentum difference between the jet velocity and the ambient
+        velocity in SI Newton [N]
+
+        :rtype float
+        """
+        return self.outflow.mass_flow * (self.outflow.velocity - self.ambient.velocity)
+
+    @property
+    def pressure_thrust(self):
+        """ Thrust produced due to the difference in static pressure between the nozzle exit and ambient conditions in
+        SI Newton [N]
+
+        :rtype: float
+        """
+        return self.throat_area * (self.outflow.p_static - self.ambient.p_static)
+
+    @property
+    def thrust(self):
+        """ Total thrust produced by the nozzle in SI Newton [N]
+
+        :rtype: float
+        """
+        return self.momentum_thrust - self.pressure_thrust
+
+    @property
     def nozzle_flow(self):
         """ Represents the flow conditions in the nozzle before the throat """
         return FlowCondition(mass_flow=self.inflow.mass_flow,
@@ -123,6 +148,8 @@ class Nozzle(Stage):
 
 
 
+
+
 if __name__ == '__main__':
     from inlet import Inlet
     from fan import Fan
@@ -132,7 +159,7 @@ if __name__ == '__main__':
     from spool import Spool
     from turbine import Turbine
     ambient_conditions = FlowCondition(corrected_mass_flow=1400.,
-                                       mach=0.8, t_static=216, p_static=22632, station_number='1', medium='air')
+                                       mach=0.8, t_static=216., p_static=22632., station_number='1', medium='air')
     inlet = Inlet(ambient=ambient_conditions, eta=0.98)
     fan = Fan(inflow=inlet.outflow, eta=0.92, pressure_ratio=1.6, station_number='21')
     bypass = Bypass(inflow=fan.outflow, bypass_ratio=8.)
@@ -144,9 +171,10 @@ if __name__ == '__main__':
     hpt = Turbine(inflow=combustor.outflow, spool_in=hp_spool, eta=0.92, station_number='45')
     lpt = Turbine(inflow=hpt.outflow, spool_in=lp_spool, eta=0.92, station_number='5')
     nozzle_core = Nozzle(inflow=lpt.outflow, ambient=ambient_conditions, eta=0.98,
-                         nozzle_type='convergent', station_number='7')
+                         nozzle_type='convergent', station_number=('7', '8'))
     print(nozzle_core.p_critical)
     print(nozzle_core.choked)
+    print(nozzle_core.pressure_thrust)
 
 
     # print(obj.p_total)
