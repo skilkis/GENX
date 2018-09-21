@@ -5,6 +5,7 @@
 
 from definitions import Stage, FlowCondition
 from inlet import Inlet
+from fan import Fan
 
 __author__ = 'San Kilkis'
 
@@ -36,8 +37,20 @@ class Bypass(Stage):
         return self.inflow.p_total
 
     @property
-    def outflow(self):
-        return NotImplementedError
+    def outflow_core(self):
+        return FlowCondition(mass_flow=self.mass_flow_core,
+                             t_total=self.t_total,
+                             p_total=self.p_total,
+                             station_number='21',
+                             medium='air')
+
+    @property
+    def outflow_bypass(self):
+        return FlowCondition(mass_flow=self.mass_flow_bypass,
+                             t_total=self.t_total,
+                             p_total=self.p_total,
+                             station_number='13',
+                             medium='air')
 
 
 if __name__ == '__main__':
@@ -45,7 +58,8 @@ if __name__ == '__main__':
     ambient_conditions = FlowCondition(corrected_mass_flow=1400.,
                                        mach=0.8, t_static=216, p_static=22632, station_number='1', medium='air')
     inlet = Inlet(inflow=ambient_conditions, eta=0.98)
-    obj = Bypass(inflow=inlet.outflow, bypass_ratio=8.0)
+    fan = Fan(inflow=inlet.outflow, eta=0.92, pressure_ratio=1.6, station_number='21')
+    obj = Bypass(inflow=fan.outflow, bypass_ratio=8.)
     print(obj.mass_flow_bypass)
     print(obj.mass_flow_core)
 

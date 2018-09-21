@@ -29,7 +29,7 @@ class Inlet(Stage):
     @property
     def outflow(self):
         return FlowCondition(t_total=self.t_total, p_total=self.p_total, station_number='2',
-                             mass_flow=self.inflow.mass_flow)
+                             mass_flow=self.inflow.mass_flow, medium='air')
 
 
 if __name__ == '__main__':

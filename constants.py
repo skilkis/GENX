@@ -15,17 +15,19 @@ __all__ = ['Constants', 'Attribute']
 
 class Constants(object):
 
+    # TODO re-document class
     """ An OOP Version of the above constants to use for the following part of this assignment, supporting lazy
      evaluation where not every attribute or property will be triggered at run-time, thus increasing performance """
 
-    __instance__ = None
-
-    def __new__(cls, *args, **kwargs):
-        """ Stops the :py:class:`Base` from instantiating more than once, if an instance exists in the current process
-        that instance is then returned as a pointer for all other sub-classes. """
-        if cls.__instance__ is None:
-            cls.__instance__ = super(Constants, cls).__new__(cls, *args, **kwargs)
-        return cls.__instance__
+    # TODO re-incorporate singleton after code verification
+    # __instance__ = None
+    #
+    # def __new__(cls, *args, **kwargs):
+    #     """ Stops the :py:class:`Base` from instantiating more than once, if an instance exists in the current process
+    #     that instance is then returned as a pointer for all other sub-classes. """
+    #     if cls.__instance__ is None:
+    #         cls.__instance__ = super(Constants, cls).__new__(cls, *args, **kwargs)
+    #     return cls.__instance__
 
     @Attribute
     def g(self):
@@ -70,7 +72,7 @@ class Constants(object):
     @Attribute
     def lower_heating_value(self):
         """ Lower Heating Value (LHV) of Kerosene in SI Mega Joule [MJ] """
-        return 43. * 10e6
+        return 43. * 1e6
 
 
 if __name__ == '__main__':

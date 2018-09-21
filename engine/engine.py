@@ -34,7 +34,7 @@ class Engine(EngineParser):
         self.test_range = np.linspace(lower, upper, 50)
 
     def get_bounds(self):
-        """ Automatically obtains sensitivity analysis for a variable """
+        """ Automatically obtains sensitivity analysis bounds for a variable """
         current_value = getattr(self, self.design_variable)
         upper, lower = 0.9 * current_value,  1.1 * current_value
         if 'eta' in self.design_variable:
