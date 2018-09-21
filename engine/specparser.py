@@ -12,8 +12,9 @@ except ImportError:
 
 __author__ = 'San Kilkis'
 
+# TODO finish documenting, mach, p_static, t_static
 
-class EngineParser(object):
+class SpecParser(object):
 
     __default_directory__ = 'data'
 
@@ -118,5 +119,5 @@ class EngineParser(object):
 
 
 if __name__ == '__main__':
-    obj = EngineParser()
+    obj = SpecParser()
     print(obj.eta_inlet)

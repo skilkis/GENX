@@ -11,6 +11,11 @@ from math import sqrt
 __author__ = 'San Kilkis'
 
 
+class Component(property):
+    """ Renames the :py:class:`property` to be able to organize all engine components """
+    pass
+
+
 class FlowCondition(Constants):
 
     __kwargs__ = None

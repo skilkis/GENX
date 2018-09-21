@@ -26,6 +26,7 @@ class Nozzle(Stage):
         self.inflow = inflow
         self.ambient = ambient
         self.eta = eta
+        self.station_number = station_number
 
         # Filtering nozzle type
         if nozzle_type == 'convergent':
@@ -35,9 +36,6 @@ class Nozzle(Stage):
                 self.nozzle_type = 'convergent'
             else:
                 raise ValueError('Only convergent nozzles are currently supported')
-
-        # Setting station number
-        self.station_number = station_number
 
     @property
     def p_critical(self):
@@ -126,7 +124,7 @@ class Nozzle(Stage):
 
         :rtype: float
         """
-        return self.momentum_thrust - self.pressure_thrust
+        return self.momentum_thrust + self.pressure_thrust
 
     @property
     def nozzle_flow(self):
@@ -134,20 +132,18 @@ class Nozzle(Stage):
         return FlowCondition(mass_flow=self.inflow.mass_flow,
                              t_total=self.t_total,
                              p_total=self.p_total,
-                             medium='gas',
+                             medium=self.inflow.medium,
                              station_number=self.station_number[0])
 
     @property
     def outflow(self):
+        """ Represents the flow conditions after the nozzle throat """
         return FlowCondition(mass_flow=self.inflow.mass_flow,
                              mach=1. if self.choked else None,
                              t_static=self.t_exit,
                              p_static=self.p_exit,
-                             medium='gas',
+                             medium=self.inflow.medium,
                              station_number=self.station_number[1])
-
-
-
 
 
 if __name__ == '__main__':
@@ -172,6 +168,8 @@ if __name__ == '__main__':
     lpt = Turbine(inflow=hpt.outflow, spool_in=lp_spool, eta=0.92, station_number='5')
     nozzle_core = Nozzle(inflow=lpt.outflow, ambient=ambient_conditions, eta=0.98,
                          nozzle_type='convergent', station_number=('7', '8'))
+    nozzle_bypass = Nozzle(inflow=bypass.outflow_bypass, ambient=ambient_conditions, eta=0.98,
+                           nozzle_type='convergent', station_number=('16', '18'))
     print(nozzle_core.p_critical)
     print(nozzle_core.choked)
     print(nozzle_core.pressure_thrust)
