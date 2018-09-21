@@ -27,8 +27,6 @@ class Turbine(Stage):
     def t_total(self):
         return self.inflow.t_total - (self.spool_in.work_required / (self.inflow.mass_flow * self.inflow.specific_heat))
 
-
-
     @property
     def p_total(self):
         """ Total pressure changes proportionally across the combustion chamber as a multiple of the pressure ratio """
