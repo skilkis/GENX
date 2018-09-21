@@ -37,6 +37,11 @@ class Compressor(Stage):
         return self.inflow.p_total * self.pressure_ratio
 
     @property
+    def work_done(self):
+        """ Work done by the compressor on the flow in SI Watt [W] """
+        return self.inflow.mass_flow * self.inflow.specific_heat * (self.t_total - self.inflow.t_total)
+
+    @property
     def outflow(self):
         return FlowCondition(mass_flow=self.inflow.mass_flow,
                              t_total=self.t_total,
@@ -54,10 +59,14 @@ if __name__ == '__main__':
     inlet = Inlet(inflow=ambient_conditions, eta=0.98)
     fan = Fan(inflow=inlet.outflow, eta=0.92, pressure_ratio=1.6, station_number='21')
     bypass = Bypass(inflow=fan.outflow, bypass_ratio=8.)
-    lpc = Compressor(inflow=bypass.outflow_bypass, eta=0.9, pressure_ratio=1.4, station_number='25')
+    lpc = Compressor(inflow=bypass.outflow_core, eta=0.9, pressure_ratio=1.4, station_number='25')
     hpc = Compressor(inflow=lpc.outflow, eta=0.9, pressure_ratio=19, station_number='3')
+    print(lpc.work_done)
+    print(hpc.inflow.mass_flow)
+    print(hpc.inflow.t_total)
     print(hpc.p_total)
     print(hpc.t_total)
+    print(hpc.work_done)
 
     # print(obj.p_total)
     # print(obj.t_total)

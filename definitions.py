@@ -48,11 +48,21 @@ class FlowCondition(Constants):
 
     @Attribute
     def kappa(self):
-        """ Specific Heat of the Selected Medium at Constant Pressure c_p in SI Joule per kilogram Kelvin[J/kg K] """
+        """ Ratio of Specific Heat Selected Medium """
         if self.medium == 'air':
             return self.kappa_air
         elif self.medium == 'gas':
             return self.kappa_gas
+        else:
+            raise AttributeError("Data for the provided medium '{}' does not exist".format(self.medium))
+
+    @Attribute
+    def specific_heat(self):
+        """ Specific Heat of the Selected Medium at Constant Pressure c_p in SI Joule per kilogram Kelvin [J/kg K] """
+        if self.medium == 'air':
+            return self.specific_heat_air
+        elif self.medium == 'gas':
+            return self.specific_heat_gas
         else:
             raise AttributeError("Data for the provided medium '{}' does not exist".format(self.medium))
 

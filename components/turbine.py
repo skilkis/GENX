@@ -10,19 +10,18 @@ __author__ = 'San Kilkis'
 # TODO add function for plotting line on TS diagram
 
 
-class CombustionChamber(Stage):
+class Turbine(Stage):
 
-    def __init__(self, inflow, eta, pressure_ratio, t_total_exit):
+    def __init__(self, inflow, eta, spool_in):
         """
 
         :param inflow:
         :param eta:
-        :param pressure_ratio: Pressure Ratio
+        :param Spool spool_in: Spool to which the :py:class`Turbine` is attached
         """
         self.inflow = inflow
         self.eta = eta
-        self.pressure_ratio = pressure_ratio
-        self.t_total_exit = t_total_exit
+        self.spool_in = spool_in
 
     @property
     def fuel_flow(self):
@@ -49,6 +48,8 @@ if __name__ == '__main__':
     from fan import Fan
     from bypass import Bypass
     from compressor import Compressor
+    from combustion import CombustionChamber
+    from spool import Spool
     ambient_conditions = FlowCondition(corrected_mass_flow=1400.,
                                        mach=0.8, t_static=216, p_static=22632, station_number='1', medium='air')
     inlet = Inlet(inflow=ambient_conditions, eta=0.98)
