@@ -19,23 +19,28 @@ class FlowCondition(Constants):
     mass_flow = Undefined('mass_flow')
     corrected_mass_flow = Undefined('corrected_mass_flow')
     mach = Undefined('mach')
+    velocity = Undefined('velocity')
     t_static = Undefined('t_static')
     t_total = Undefined('t_total')
     p_static = Undefined('p_static')
     p_total = Undefined('p_total')
     medium = Undefined('medium')
+    rho = Undefined('rho')
     station_number = Undefined('station_number')
 
+    # TODO Finish documentaiton
     def __init__(self, **kwargs):
         """
 
         :param float mass_flow:
         :param float mach:
+        :param float velocity:
         :param float t_static:
         :param float p_static:
         :param str medium:
         :param float t_total:
         :param float p_total:
+        :param float density: Density of the substance
         :param str station_number:
         """
         self.__kwargs__ = kwargs
@@ -43,8 +48,14 @@ class FlowCondition(Constants):
             command = 'self.{} = {}'.format(key, "'{}'".format(value) if type(value) is str else value)
             exec command
 
+    # TODO add a nice representation for visualization in debugger and print statements
     # def __repr__(self):
     #     return '<Undefined = {}>.format'
+
+    @Attribute
+    def velocity(self):
+        """ Computes flow velocity from the mach number if available in SI meter per second [m/s] """
+        return self.mach * sqrt(self.kappa * self.gas_constant)
 
     @Attribute
     def kappa(self):

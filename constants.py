@@ -56,7 +56,7 @@ class Constants(object):
 
     @Attribute
     def specific_heat_gas(self):
-        """ Specific Heat of Fuel/Air Mixture at Constant Pressure c_p in SI Joule per kilogram Kelvin[J/kg K] """
+        """ Specific Heat of Fuel/Air Mixture at Constant Pressure c_p in SI Joule per kilogram Kelvin [J/kg K] """
         return 1150.
 
     @Attribute
@@ -73,6 +73,11 @@ class Constants(object):
     def lower_heating_value(self):
         """ Lower Heating Value (LHV) of Kerosene in SI Mega Joule [MJ] """
         return 43. * 1e6
+
+    @Attribute
+    def gas_constant(self):
+        """ Individual Gas Constant of Air in SI Joule per kilogram Kelvin [J/kg K] """
+        return 287.05
 
 
 if __name__ == '__main__':

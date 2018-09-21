@@ -57,7 +57,7 @@ if __name__ == '__main__':
     from definitions import FlowCondition
     ambient_conditions = FlowCondition(corrected_mass_flow=1400.,
                                        mach=0.8, t_static=216, p_static=22632, station_number='1', medium='air')
-    inlet = Inlet(inflow=ambient_conditions, eta=0.98)
+    inlet = Inlet(ambient=ambient_conditions, eta=0.98)
     fan = Fan(inflow=inlet.outflow, eta=0.92, pressure_ratio=1.6, station_number='21')
     obj = Bypass(inflow=fan.outflow, bypass_ratio=8.)
     print(obj.mass_flow_bypass)
