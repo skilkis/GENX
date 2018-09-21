@@ -10,25 +10,24 @@ __author__ = 'San Kilkis'
 # TODO add function for plotting line on TS diagram
 
 
-class CombustionChamber(Stage):
+class Turbine(Stage):
 
-    def __init__(self, inflow, eta, pressure_ratio, t_total_exit):
+    def __init__(self, inflow, eta, spool_in):
         """
 
         :param inflow:
         :param eta:
-        :param pressure_ratio: Pressure Ratio
+        :param Spool spool_in: Spool to which the :py:class`Turbine` is attached
         """
         self.inflow = inflow
         self.eta = eta
-        self.pressure_ratio = pressure_ratio
-        self.t_total_exit = t_total_exit
+        self.spool_in = spool_in
 
     @property
-    def fuel_flow(self):
-        """ Fuel flow in the Combustion Chamber in SI kilogram per second [kg s^-1] """
-        return (self.inflow.mass_flow * self.specific_heat_gas * (self.t_total_exit - self.inflow.t_total)) /\
-               (self.eta * self.lower_heating_value)
+    def t_total(self):
+        return self.inflow.t_total - (self.spool_in.work_required / (self.inflow.mass_flow * self.inflow.specific_heat))
+
+
 
     @property
     def p_total(self):
@@ -49,6 +48,8 @@ if __name__ == '__main__':
     from fan import Fan
     from bypass import Bypass
     from compressor import Compressor
+    from combustion import CombustionChamber
+    from spool import Spool
     ambient_conditions = FlowCondition(corrected_mass_flow=1400.,
                                        mach=0.8, t_static=216, p_static=22632, station_number='1', medium='air')
     inlet = Inlet(inflow=ambient_conditions, eta=0.98)
@@ -57,11 +58,10 @@ if __name__ == '__main__':
     lpc = Compressor(inflow=bypass.outflow_core, eta=0.9, pressure_ratio=1.4, station_number='25')
     hpc = Compressor(inflow=lpc.outflow, eta=0.9, pressure_ratio=19, station_number='3')
     combustor = CombustionChamber(inflow=hpc.outflow, eta=0.99, pressure_ratio=0.96, t_total_exit=1450.)
-    print(fan.work_done)
-    print(hpc.outflow.t_total)
-    print(combustor.outflow.mass_flow)
-    print(combustor.outflow.p_total)
-    print(combustor.fuel_flow)
+    lp_spool = Spool(compressor_in=(fan, lpc), eta=0.99)
+    hp_spool = Spool(compressor_in=hpc, eta=0.99)
+    hpt = Turbine(inflow=combustor.outflow, spool_in=hp_spool, eta=0.99)
+    print(hpt.t_total)
 
     # print(obj.p_total)
     # print(obj.t_total)
