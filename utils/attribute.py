@@ -1,4 +1,8 @@
 
+class SettableProperty(property):
+
+    __setattr__ = property.fset
+
 
 class Attribute(object):
     """ A decorator that is used for lazy evaluation of an object attribute.
@@ -24,12 +28,12 @@ class Attribute(object):
     #
     #     update_wrapper(self, method)
 #
-#     def __get__(self, instance, owner):
-#         if instance is None:
-#             return self
-#         value = self.method(instance)
-#         setattr(instance, self.__name__, value)
-#         return value
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        value = self.method(instance)
+        setattr(instance, self.__name__, value)
+        return value
 
     # def __get__(self, instance, owner=None):
     #

@@ -1,30 +1,41 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" Provides all derived/non-derived inputs of the CH-53D Helicopter to be used later in performance calculations """
+""" ADD DOC """
 
-from definitions import Stage
+from definitions import Stage, FlowCondition
 
 __author__ = 'San Kilkis'
+
+# TODO add function for plotting line on TS diagram
 
 
 class Inlet(Stage):
 
-    def __init__(self, input_flow, eta=None):
-        eta = self.engine_data['efficiencies']['eta_inlet'] if eta is None else eta
-        super(self.__class__, self).__init__(input_flow, eta)
+    def __init__(self, inflow, eta):
+        self.inflow = inflow
+        self.eta = eta
 
-    def mass_flow(self):
-        return
+    @property
+    def t_total(self):
+        """ Total temperature remains constant across the inlet """
+        return self.inflow.t_total
+
+    @property
+    def p_total(self):
+        p, eta, k, m = self.inflow.p_static, self.eta, self.inflow.kappa, self.inflow.mach
+        return p * (1 + (eta * ((k - 1) / 2.) * m ** 2)) ** (k / (k - 1))
+
+    @property
+    def outflow(self):
+        return FlowCondition(t_total=self.t_total, p_total=self.p_total, station_number='2',
+                             mass_flow=self.inflow.mass_flow)
 
 
 if __name__ == '__main__':
-    from definitions import FlowCondition
-    ambient_conditions = FlowCondition(mach=0.8, t_static=216, p_static=22632)
-    obj = Inlet(input_flow=ambient_conditions)
-
-# working_dir = os.path.dirname(os.path.realpath(__file__))
-
-# TODO Remove the following attributes and put them into OOP for lazy-evaluation
-
-# TODO consider making use of https://docs.python.org/2/library/trace.html for dependency tracking
+    ambient_conditions = FlowCondition(mach=0.8, t_static=216., p_static=22632., station_number='1', medium='air',
+                                       corrected_mass_flow=1400.)
+    obj = Inlet(inflow=ambient_conditions, eta=0.98)
+    print(obj.inflow.mass_flow)
+    print(obj.p_total)
+    print(obj.t_total)
