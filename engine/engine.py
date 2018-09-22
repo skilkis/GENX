@@ -180,3 +180,4 @@ if __name__ == '__main__':
     print(obj.thrust)
     print(obj.sfc)
     print(obj.get_components())
+    print(obj.ambient.rho)
