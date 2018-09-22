@@ -174,9 +174,6 @@ class Engine(SpecParser):
 
 if __name__ == '__main__':
     # obj = Engine(design_variable='eta_fan', design_range=np.linspace(0.9, 1., 100))
-    obj = Engine(ideal_cycle=True)
+    obj = Engine(ideal_cycle=True, design_variable='eta_hpc')
     print(obj.design_range)
-    print(obj.combustor.fuel_flow)
-    print(obj.thrust)
     print(obj.sfc)
-    print(obj.get_components())
