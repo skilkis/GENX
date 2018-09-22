@@ -52,6 +52,7 @@ class Nozzle(Stage):
     @property
     def choked(self):
         """ Boolean switch case that returns ``True`` if the flow is chocked else ``False`` """
+        # TODO use isintance(self.p_total, Iterable) and create a new conditional that checks each entry in vector
         return True
         # if self.p_total > self.p_critical:
         #     # print('{}: Nozzle is choked! Total pressure {} [Pa]'

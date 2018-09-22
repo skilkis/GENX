@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-""" Contains all abstract class definitions  """
-
 from __future__ import division
 from constants import *
 from utils import Undefined
@@ -12,8 +10,12 @@ __author__ = 'San Kilkis'
 
 
 class Component(property):
-    """ Renames the :py:class:`property` to be able to organize all engine components """
-    pass
+    """ Renames the :py:class:`property` to be able to organize all engine components and retrieve them easily """
+
+    def __repr__(self):
+        return "<'{}' {} object at {}>".format(self.fget.__name__,
+                                               self.__class__.__name__,
+                                               hex(id(self)))
 
 
 class FlowCondition(Constants):

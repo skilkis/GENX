@@ -24,6 +24,12 @@ class SpecParser(object):
         :param str filename: Filename w/ extension of desired engine
         """
         self.filename = filename
+        self.__name__ = filename.split('.')[0]
+
+    def __repr__(self):
+        return "<'{}' {} object at {}>".format(self.__name__,
+                                               self.__class__.__name__,
+                                               hex(id(self)))
 
     @Attribute  # Lazy-evaluation of reading procedure
     def reader(self):
@@ -96,12 +102,12 @@ class SpecParser(object):
     @Attribute
     def eta_lpt(self):
         """ Low-Pressure Turbine Efficiency """
-        return float(self.reader['eta_lpc'])
+        return float(self.reader['eta_lpt'])
 
     @Attribute
     def eta_hpt(self):
         """ High-Pressure Turbine Efficiency """
-        return float(self.reader['eta_hpc'])
+        return float(self.reader['eta_hpt'])
 
     @Attribute
     def eta_mech(self):

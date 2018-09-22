@@ -7,44 +7,66 @@ from specparser import SpecParser
 from definitions import FlowCondition, Component
 from components import *
 import numpy as np
-try:
-    import ConfigParser as config
-except ImportError:
-    import configparser as config
 
 __author__ = 'San Kilkis'
 
 
 class Engine(SpecParser):
 
-    def __init__(self, filename='GE90.cfg',
-                 isentropic=True,
-                 design_variable='eta_cc',
-                 design_range=None,
+    def __init__(self, filename='GE90.cfg', ideal_cycle=False, design_variable=None, design_range=None,
                  ambient=FlowCondition(corrected_mass_flow=1400.,
                                        mach=0.8,
-                                       p_static=22632,
-                                       t_static=216,
+                                       p_static=22632.,
+                                       t_static=216.,
                                        medium='air')):
         """
         :param str filename: Filename w/ extension of desired engine
-        :param bool isentropic: Toggles if the compression and expansion processes are isentropic
-        :param str design_variable: Specifies which design variable to investigate
-        :param FlowCondition inflow: Specifies the flow the engine is subject to
+        :param bool ideal_cycle: Toggles if the compression and expansion processes are isentropic
+        :param str design_variable: Specifies which design variable to investigate for the sensitivity analysis
+        :param np.array design_range: Optionally set a range of values for the design variable
+        :param FlowCondition ambient: Specifies the flow the engine is subject to
+        :param:
         """
+
         super(Engine, self).__init__(filename)
-        self.isentropic = isentropic
+        self.ideal_cycle = ideal_cycle
         self.design_variable = design_variable
         self.ambient = ambient
 
-        # Test Range Bounds for the Sensitivity Analysis
-        if design_range is None:
-            upper, lower = self.get_bounds()
-            self.design_range = np.linspace(lower, upper, 50)
+        # Converting Engine to be an ideal cycle:
+        if self.ideal_cycle:
+            self.ideal_cycle = ideal_cycle
+            self.make_ideal()
+
+        # Setting-up a range of design_variable values for the Sensitivity Analysis
+        if design_variable is not None:
+            if design_range is None:
+                upper, lower = self.get_bounds()
+                self.design_range = np.linspace(lower, upper, 50)
+            else:
+                try:
+                    ndim = design_range.ndim
+                    if ndim == 1:
+                        self.design_range = design_range
+                    else:
+                        raise ValueError("A {}D array for 'design_range' was provided,"
+                                         " only 1D arrays are supported".format(ndim))
+                except AttributeError:
+                    raise AttributeError("'design_range' must be a 1D numpy array for the vectorized process")
+            # Setting passed or created range for the design_variable
             setattr(self, design_variable, self.design_range)
+        else:
+            self.design_range = design_range
+
+    def make_ideal(self):
+        """ Sets all efficiencies as well as the pressure ratio in the combustion chamber to 1.0 """
+        # Fetching all engine specifications which need to set to 1.0
+        ideal_attrs = self.get_efficiencies() + ['pr_cc']
+        for entry in ideal_attrs:
+            setattr(self, entry, 1.0)
 
     def get_bounds(self):
-        """ Automatically obtains sensitivity analysis bounds for a variable if  """
+        """ Automatically obtains sensitivity analysis bounds for a variable if :py:attr:`design_range` is ``None`` """
         current_value = getattr(self, self.design_variable)
         upper, lower = 0.9 * current_value,  1.1 * current_value
         if 'eta' in self.design_variable:
@@ -142,13 +164,19 @@ class Engine(SpecParser):
         """ Thrust Specific Fuel Consumption (TSFC) in SI gram per kilo-Newton second [g/kN s] """
         return (self.combustor.fuel_flow / self.thrust) * 1e6
 
-    # def plot_thrust(self):
+    @classmethod
+    def get_components(cls):
+        return [value for value in vars(cls).values() if isinstance(value, Component)]
 
+    def get_efficiencies(self):
+        return [key for key in vars(super(self.__class__, self)).keys() if 'eta' in key]
 
 
 if __name__ == '__main__':
-    obj = Engine()
-    print(obj.eta_cc)
+    # obj = Engine(design_variable='eta_fan', design_range=np.linspace(0.9, 1., 100))
+    obj = Engine(ideal_cycle=True)
+    print(obj.design_range)
     print(obj.combustor.fuel_flow)
     print(obj.thrust)
     print(obj.sfc)
+    print(obj.get_components())
