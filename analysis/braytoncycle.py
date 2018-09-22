@@ -7,7 +7,7 @@ from engine import Engine
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
-from utils import ProgressBar
+from utils import ProgressBar, Attribute
 
 __author__ = 'San Kilkis'
 
@@ -17,12 +17,14 @@ class BraytonCycle(object):
     def __init__(self, engine_in=Engine()):
         self.engine_in = engine_in
 
-    def get_s0(self):
+    @Attribute
+    def specific_entropy(self):
         """ Allows look-up of reference Specific Entropy `s` of the ambient flow depending on the ambient static
         temperature :pr:attr:`engine_in.ambient.t_static` and ambient static pressure
         `py:attr:`engine_in.ambient.p_static`. If a cached value is already present in the look-up table then the online
         calculator won't be accessed. Otherwise, this process takes some time as a request to the server has to be made.
 
+        :return: Specific Entropy in SI Joule per kilogram Kelvin [J/kg K]
         :rtype: float
         """
         prog = ProgressBar('Fetching Entropy Value', threaded=True)
@@ -63,7 +65,7 @@ class BraytonCycle(object):
 
                 raw = response.text.split(result_hdr[0])[-1].split(result_hdr[1])[0]
                 filtered = raw.replace('\t', '').replace('\n', '').split('Entropy: ')[-1].split(' J')[0]
-                s0 = float(filtered) / 1000  # Entropy in kJ/kg K
+                s0 = float(filtered)  # Entropy in J/kg K
 
                 # Writing value to cache and returning
                 with open('cache/entropy_table.dat', 'a') as cache:
@@ -102,26 +104,44 @@ class BraytonCycle(object):
         #
         # return s0
 
+    def isobaric_lines(self, plot_limits=(6000, 8000, 0, 800), n_lines=30):
+        """
+
+        :param tuple plot_limits:
+        :param int n_lines: Specifies maximum number of isobaric process lines to draw
+        :return:
+        """
+        s_lower, s_upper, t_lower, t_upper = plot_limits
+
+        s_range = np.arange(s_lower, s_upper, (s_upper - s_lower) / 1000.)
+        for t_initial in np.linspace(t_lower, t_upper, n_lines):
+            t_values = t_initial * np.exp((s_range - s_lower) / self.engine_in.ambient.specific_heat)
+            print(s_range - s_lower)
+            plt.plot(s_range, t_values, color='black', alpha=0.5, linestyle='-.')
 
 
-    # def plot(self):
-    #     """ Generates a plot of the T-s diagram (Temperature vs. specific entropy) """
-    #     fig = plt.figure('{}Cycle'.format('Ideal' if self.engine_in.ideal_cycle else ''))
-    #     plt.style.use('ggplot')
-    #
-    #     # Values used for the Exact Solution
-    #     x_final = 4
-    #     x_exact = np.linspace(0, x_final, 100)
-    #     y_exact = [exp(num) for num in x_exact]
-    #
-    #     plt.xlabel(r'$Specific Entropy \left[\mathrm{kJ}/\mathrm{kg} \cdot {}\right]$ [-]')
-    #     plt.ylabel(r'$f\left(x\right) = \mathrm{e}^x$ [-]')
-    #     plt.title(r'Forward Euler Numerical Integration of $f\left(x\right) = e^{x}$')
-    #     plt.legend(loc='best')
-    #     plt.show()
-    #     # fig.savefig(fname=os.path.join(working_dir, 'Figures', '%s.pdf' % fig.get_label()), format='pdf')
+
+
+
+    def plot(self):
+        """ Generates a plot of the T-s diagram (Temperature vs. Specific entropy) """
+        fig = plt.figure('{}Cycle'.format('Ideal' if self.engine_in.ideal_cycle else ''))
+        plt.style.use('ggplot')
+        s_0 = self.specific_entropy
+
+        # Values used for the Exact Solution
+        station_1 = plt.plot(s_0, self.engine_in.ambient.t_static, marker='o')
+        self.isobaric_lines()
+
+        plt.xlabel(r'Specific Entropy $\left[\frac{\mathrm{J}}{\mathrm{kg} \cdot \mathrm{K}}\right]$')
+        plt.ylabel(r'Temperature $\left[\mathrm{K}\right]$')
+        plt.axis((6000, 8000, 0, 1000))
+        plt.show()
+        # fig.savefig(fname=os.path.join(working_dir, 'Figures', '%s.pdf' % fig.get_label()), format='pdf')
 
 
 if __name__ == '__main__':
     obj = BraytonCycle()
-    resp = obj.get_s0()
+    resp = obj.specific_entropy
+    obj.plot()
+    obj.isobaric_lines()

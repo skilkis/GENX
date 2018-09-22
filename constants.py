@@ -71,7 +71,7 @@ class Constants(object):
 
     @Attribute
     def lower_heating_value(self):
-        """ Lower Heating Value (LHV) of Kerosene in SI Mega Joule [MJ] """
+        """ Lower Heating Value (LHV) of Kerosene in SI Joule [J] """
         return 43. * 1e6
 
     @Attribute

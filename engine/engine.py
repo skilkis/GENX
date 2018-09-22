@@ -33,16 +33,14 @@ class Engine(SpecParser):
         self.design_variable = design_variable
         self.ambient = ambient
 
-        # Converting Engine to be an ideal cycle:
+        # Converting Engine to be an ideal cycle
         if self.ideal_cycle:
-            self.ideal_cycle = ideal_cycle
             self.make_ideal()
 
         # Setting-up a range of design_variable values for the Sensitivity Analysis
         if design_variable is not None:
             if design_range is None:
-                upper, lower = self.get_bounds()
-                self.design_range = np.linspace(lower, upper, 50)
+                self.design_range = self.get_range()
             else:
                 try:
                     ndim = design_range.ndim
@@ -53,10 +51,9 @@ class Engine(SpecParser):
                                          " only 1D arrays are supported".format(ndim))
                 except AttributeError:
                     raise AttributeError("'design_range' must be a 1D numpy array for the vectorized process")
-            # Setting passed or created range for the design_variable
-            setattr(self, design_variable, self.design_range)
+            setattr(self, design_variable, self.design_range)  # Setting passed or created range for the design_variable
         else:
-            self.design_range = design_range
+            self.design_range = design_range  # Sets to default value of None
 
     def make_ideal(self):
         """ Sets all efficiencies as well as the pressure ratio in the combustion chamber to 1.0 """
@@ -65,14 +62,20 @@ class Engine(SpecParser):
         for entry in ideal_attrs:
             setattr(self, entry, 1.0)
 
-    def get_bounds(self):
-        """ Automatically obtains sensitivity analysis bounds for a variable if :py:attr:`design_range` is ``None`` """
+    def get_range(self):
+        """ Automatically obtains sensitivity analysis range for a variable if :py:attr:`design_range` is ``None`` """
         current_value = getattr(self, self.design_variable)
-        upper, lower = 0.9 * current_value,  1.1 * current_value
+        n = 50
         if 'eta' in self.design_variable:
             upper = 1.0
             lower = 0.9
-        return upper, lower
+            return np.linspace(lower, upper, n)
+        else:
+            upper = 1.1 * current_value
+            lower = 0.9 * current_value
+            lower_range, step = np.linspace(lower, current_value, n // 2, retstep=True)
+            upper_range = np.arange(current_value, upper, step)[1:]  # Ensures that current_value is present in output
+            return np.append(lower_range, upper_range)
 
     @Component
     def inlet(self):
@@ -173,7 +176,7 @@ class Engine(SpecParser):
 
 
 if __name__ == '__main__':
-    # obj = Engine(design_variable='eta_fan', design_range=np.linspace(0.9, 1., 100))
-    obj = Engine(ideal_cycle=True, design_variable='eta_hpc')
-    print(obj.design_range)
+    obj = Engine(ideal_cycle=False, design_variable='corrected_mass_flow')
+    print(obj.design_range / 0.96)
     print(obj.sfc)
+    print(obj.thrust)

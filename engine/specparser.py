@@ -47,7 +47,7 @@ class SpecParser(object):
     @Attribute
     def corrected_mass_flow(self):
         """ Correct mass flow in SI kilogram per second  """
-        return float(self.reader['mass_corr'])
+        return float(self.reader['corrected_mass_flow'])
 
     @Attribute
     def nozzle_type(self):
