@@ -6,7 +6,7 @@
 from __future__ import division
 from constants import *
 from utils import Undefined
-from math import sqrt
+import numpy as np
 
 __author__ = 'San Kilkis'
 
@@ -50,8 +50,7 @@ class FlowCondition(Constants):
         """
         self.__kwargs__ = kwargs
         for key, value in zip(kwargs.keys(), kwargs.values()):
-            command = 'self.{} = {}'.format(key, "'{}'".format(value) if type(value) is str else value)
-            exec command
+            setattr(self, key, value)
 
     # TODO add a nice representation for visualization in debugger and print statements
     # def __repr__(self):
@@ -60,7 +59,7 @@ class FlowCondition(Constants):
     @Attribute
     def velocity(self):
         """ Computes flow velocity from the mach number if available in SI meter per second [m/s] """
-        return self.mach * sqrt(self.kappa * self.gas_constant * self.t_static)
+        return self.mach * np.sqrt(self.kappa * self.gas_constant * self.t_static)
 
     @Attribute
     def rho(self):
@@ -128,7 +127,7 @@ class FlowCondition(Constants):
     @Attribute
     def c_ratio(self):
         """ Correction Ratio for obtaining the Corrected Mass Flow """
-        numerator = sqrt(self.t_total / self.temperature_sl)
+        numerator = np.sqrt(self.t_total / self.temperature_sl)
         denominator = self.p_total / self.pressure_sl
         return numerator / denominator
 

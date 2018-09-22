@@ -14,6 +14,7 @@ __author__ = 'San Kilkis'
 
 # TODO finish documenting, mach, p_static, t_static
 
+
 class SpecParser(object):
 
     __default_directory__ = 'data'
@@ -37,7 +38,7 @@ class SpecParser(object):
             entries += cfg.items(section)
         return dict(entries)
 
-    @property
+    @Attribute
     def corrected_mass_flow(self):
         """ Correct mass flow in SI kilogram per second  """
         return float(self.reader['mass_corr'])
@@ -76,6 +77,11 @@ class SpecParser(object):
     def pr_hpc(self):
         """ Pressure Ratio across the High-Pressure Compressor """
         return float(self.reader['pr_hpc'])
+
+    @Attribute
+    def eta_fan(self):
+        """ Fan Isentropic Efficiency """
+        return float(self.reader['eta_fan'])
 
     @Attribute
     def eta_lpc(self):

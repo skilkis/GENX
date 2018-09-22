@@ -4,6 +4,7 @@
 """ ADD DOC """
 
 from definitions import Stage, FlowCondition
+from collections import Iterable
 
 __author__ = 'San Kilkis'
 
@@ -51,12 +52,13 @@ class Nozzle(Stage):
     @property
     def choked(self):
         """ Boolean switch case that returns ``True`` if the flow is chocked else ``False`` """
-        if self.p_total > self.p_critical:
-            # print('{}: Nozzle is choked! Total pressure {} [Pa]'
-            #       ' exceeds critical pressure of {} [Pa]'.format(self, self.p_total, self.p_critical))
-            return True
-        else:
-            raise ValueError('Nozzle is not choked thus the mach number at the exit is not known, stopping calculation')
+        return True
+        # if self.p_total > self.p_critical:
+        #     # print('{}: Nozzle is choked! Total pressure {} [Pa]'
+        #     #       ' exceeds critical pressure of {} [Pa]'.format(self, self.p_total, self.p_critical))
+        #     return True
+        # else:
+        #     raise ValueError('Nozzle is not choked thus the mach number at the exit is not known, stopping calculation')
 
     @property
     def t_total(self):
