@@ -76,7 +76,7 @@ class Constants(object):
 
     @Attribute
     def gas_constant(self):
-        """ Individual Gas Constant of Air in SI Joule per kilogram Kelvin [J/kg K] """
+        """ Universal Gas Constant in SI Joule per kilogram Kelvin [J/kg K] """
         return 287.05
 
 

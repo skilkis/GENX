@@ -89,25 +89,26 @@ class BraytonCycle(object):
         """
         s_lower, s_upper, t_lower, t_upper = plot_limits
 
-        s_range = np.arange(s_lower, s_upper, (s_upper - s_lower) / 1000.)
+        s_range = np.arange(s_lower, s_upper, (s_upper - s_lower) / 10000.)
         for t_initial in np.linspace(t_lower, t_upper, n_lines):
             t_values = t_initial * np.exp((s_range - s_lower) / self.engine_in.ambient.specific_heat_gas)
-            plt.plot(s_range, t_values, alpha=1.0, label='{}'.format(t_initial))
+            plt.plot(s_range, t_values, alpha=1.0, color='black', linewidth=0.5, linestyle='--')
 
     def plot_stage(self, component_in, s_start):
 
-        if isinstance(component_in, Inlet):
-            t_start, t_end = component_in.inflow.t_static, component_in.outflow.t_total
-            p_start, p_end = component_in.inflow.p_static, component_in.inflow.p_total
+        comp = component_in
+        if isinstance(comp, Inlet):
+            t_start, t_end = comp.inflow.t_static, comp.outflow.t_total
+            p_start, p_end = comp.inflow.p_static, comp.outflow.p_total
         else:
-            t_start, t_end = component_in.inflow.t_total, component_in.outflow.t_total
-            p_start, p_end = component_in.inflow.p_total, component_in.inflow.p_total
+            t_start, t_end = comp.inflow.t_total, comp.outflow.t_total
+            p_start, p_end = comp.inflow.p_total, comp.outflow.p_total
 
-        delta_s = (component_in.inflow.specific_heat * log(t_end / t_start)) - (component_in.gas_constant
-                                                                                * log(p_start / p_end))
+        delta_s = (comp.inflow.specific_heat * log(t_end / t_start)) - (comp.gas_constant
+                                                                        * log(p_end/p_start))
         plt.plot(s_start, t_start, marker='o', markerfacecolor='white')
         plt.plot(s_start + abs(delta_s), t_end, marker='o', markerfacecolor='white')
-        plt.text(s_start + abs(delta_s), t_end, component_in.outflow.station_number)
+        plt.text(s_start + abs(delta_s), t_end, comp.outflow.station_number)
         return s_start + abs(delta_s)
 
     def plot(self):
@@ -117,23 +118,25 @@ class BraytonCycle(object):
         s_0 = self.specific_entropy
 
         # Values used for the Exact Solution
-        station_1 = plt.plot(s_0, self.engine_in.ambient.t_static, marker='o')
-        print(station_1[0].get_color())
+        # print(station_1[0].get_color()) # How to get station color
         s_inlet = self.plot_stage(self.engine_in.inlet, s_0)
-        s_fan = self.plot_stage(self.engine_in.fan, s_inlet)
-        s_lpc = self.plot_stage(self.engine_in.lpc, s_fan)
-        s_hpc = self.plot_stage(self.engine_in.hpc, s_lpc)
-        s_cc = self.plot_stage(self.engine_in.combustor, s_hpc)
-        s_hpt = self.plot_stage(self.engine_in.hpt, s_cc)
-        s_lpt = self.plot_stage(self.engine_in.lpt, s_hpt)
+        # s_fan = self.plot_stage(self.engine_in.fan, s_inlet)
+        # s_lpc = self.plot_stage(self.engine_in.lpc, s_fan)
+        # s_hpc = self.plot_stage(self.engine_in.hpc, s_lpc)
+        # s_cc = self.plot_stage(self.engine_in.combustor, s_hpc)
+        # s_hpt = self.plot_stage(self.engine_in.hpt, s_cc)
+        # s_lpt = self.plot_stage(self.engine_in.lpt, s_hpt)
         # s_hot_nozzle = self.plot_stage(self.engine_in.nozzle_core, s_lpt)
         # s_cold_nozzle = self.plot_stage(self.engine_in.nozzle_bypass, s_fan)
-        # self.isobaric_lines()
+
+        s_min, s_max = plt.gca().get_xbound()
+        t_min, t_max = plt.gca().get_ybound()
+        self.isobaric_lines(plot_limits=(s_min, s_max, t_min - 1000., t_max), n_lines=20)
 
         plt.xlabel(r'Specific Entropy $\left[\frac{\mathrm{J}}{\mathrm{kg} \cdot \mathrm{K}}\right]$')
         plt.ylabel(r'Temperature $\left[\mathrm{K}\right]$')
         plt.title(r'Test')
-        # plt.axis((2000., 15000, 0., 1000.))
+        plt.axis((s_min, s_max, t_min, t_max))
         plt.legend()
         plt.show()
 
