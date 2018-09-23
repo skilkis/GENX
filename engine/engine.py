@@ -58,7 +58,7 @@ class Engine(SpecParser):
     def make_ideal(self):
         """ Sets all efficiencies as well as the pressure ratio in the combustion chamber to 1.0 """
         # Fetching all engine specifications which need to set to 1.0
-        ideal_attrs = self.get_efficiencies() + ['pr_cc']
+        ideal_attrs = self.get_eta_keys() + ['pr_cc']
         for entry in ideal_attrs:
             setattr(self, entry, 1.0)
 
@@ -171,12 +171,16 @@ class Engine(SpecParser):
     def get_components(cls):
         return [value for value in vars(cls).values() if isinstance(value, Component)]
 
-    def get_efficiencies(self):
+    def get_eta_keys(self):
+        """ Provides a list of all efficiency keys by accessing the superclass :py:class:`SpecParser` dictionary
+
+        :rtype: list[str]
+        """
         return [key for key in vars(super(self.__class__, self)).keys() if 'eta' in key]
 
 
 if __name__ == '__main__':
-    obj = Engine(ideal_cycle=False, design_variable='corrected_mass_flow')
-    print(obj.design_range / 0.96)
+    obj = Engine(ideal_cycle=False, design_variable='eta_nozzle')
+    print(obj.design_range)
     print(obj.sfc)
     print(obj.thrust)

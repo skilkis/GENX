@@ -13,6 +13,8 @@ __author__ = 'San Kilkis'
 
 
 class Fan(Compressor):
+    """ A fan is more or less a compressor thus the total temperature and pressure attributes are from
+    :py:class:`Compressor`"""
 
     def __init__(self, inflow, eta, pressure_ratio, station_number):
         """

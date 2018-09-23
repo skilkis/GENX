@@ -4,6 +4,7 @@
 """ Contains all abstract class definitions  """
 
 from constants import *
+from directories import DIRS
 import os
 try:
     import ConfigParser as config
@@ -17,7 +18,7 @@ __author__ = 'San Kilkis'
 
 class SpecParser(object):
 
-    __default_directory__ = 'data'
+    __default_directory__ = DIRS['ENGINE_DIR']
 
     def __init__(self, filename='GE90.cfg'):
         """
