@@ -67,13 +67,6 @@ class Nozzle(Stage):
 
         return check(self.p_total, self.p_critical)
 
-        # if self.p_total > self.p_critical:
-        #     # print('{}: Nozzle is choked! Total pressure {} [Pa]'
-        #     #       ' exceeds critical pressure of {} [Pa]'.format(self, self.p_total, self.p_critical))
-        #     return True
-        # else:
-        #     raise ValueError('Nozzle is not choked thus the mach number at the exit is not known, stopping calculation')
-
     @property
     def t_total(self):
         """ Total temperature at the end of the py:class:`Nozzle` right before the throat n SI Kelvin [K]. The total

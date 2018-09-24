@@ -53,7 +53,8 @@ class Sensitivity(object):
         output = []
 
         for i, var in enumerate(param_list):
-            engine_sim = Engine(self.filename, self.ideal_cycle, var, self.design_range, self.ambient)
+            engine_class = self.engine_in.__class__
+            engine_sim = engine_class(self.filename, self.ideal_cycle, var, self.design_range, self.ambient)
 
             percentage = ((engine_sim.design_range / engine_sim.design_range[engine_sim.original_index]) - 1.) * 100
             thrust_response = engine_sim.thrust
@@ -136,18 +137,20 @@ class Sensitivity(object):
         fig, (thrust, sfc) = plt.subplots(2, 1, num='{} Efficiency Sensitivity'.format(self.engine_in.__name__),
                                           sharex='all')
 
+        # Obtaining :py:class:`Engine` without circular import
+        engine_class = self.engine_in.__class__
+
         # Initializing Labels
         thrust.set_ylabel(r'Thrust $\left[\mathrm{N}\right]$')
         sfc.set_ylabel(r'Specific Fuel Consumption $\left[\frac{\mathrm{g}}{\mathrm{kN} \cdot \mathrm{s}}\right]$')
         thrust.set_xlabel('')
         thrust.set_title('{} Efficiency Sensitivity'.format(self.engine_in.__name__))
-
         linestyles = [':', '-.', '-']
         for i, var in enumerate(self.design_variable):
             cycle_count = i % len(linestyles)
             style = linestyles[cycle_count]
-            eta_0 = getattr(Engine(self.filename, self.ideal_cycle, self.ambient), var)
-            engine_sim = Engine(self.filename, self.ideal_cycle, var, self.design_range, self.ambient)
+            eta_0 = getattr(engine_class(self.filename, self.ideal_cycle, self.ambient), var)
+            engine_sim = engine_class(self.filename, self.ideal_cycle, var, self.design_range, self.ambient)
 
             percentage_scale = ((engine_sim.design_range / eta_0) - 1.) * 100
 

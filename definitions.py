@@ -148,6 +148,7 @@ class Stage(Constants):
     def outflow(self):
         return NotImplementedError('Implement methods to compute this parameter in sublcasses')
 
+
 if __name__ == '__main__':
     obj = FlowCondition(mach=0.8, p_total=101325, medium='air')
     print(obj.p_static)

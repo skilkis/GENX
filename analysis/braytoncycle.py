@@ -317,7 +317,9 @@ class BraytonCycle(object):
                                                 'Ideal' if self.engine_in.ideal_cycle else 'Real'))
         plt.axis((s_min, s_max, t_min, t_max))
         plt.show()
-        fig.savefig(os.path.join(DIRS, plt.figure.__name__))
+        fig.savefig(os.path.join(DIRS['FIGURE_DIR'],
+                                 '{}_{}_cycle'.format(self.engine_in.__name__,
+                                                      'ideal' if self.engine_in.ideal_cycle else 'real')))
 
 
 if __name__ == '__main__':

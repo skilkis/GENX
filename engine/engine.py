@@ -8,6 +8,8 @@ from definitions import FlowCondition, Component, Attribute
 from components import *
 from analysis import Sensitivity, BraytonCycle
 import numpy as np
+from directories import DIRS
+import os
 
 __author__ = 'San Kilkis'
 
@@ -178,11 +180,15 @@ class Engine(SpecParser):
         return (self.combustor.fuel_flow / self.thrust) * 1e6
 
     def calculate_cycle(self):
+        """ Plots the T-S Diagram for the current engine and displays it on screen """
         BraytonCycle(self).plot()
 
-    @classmethod
-    def get_components(cls):
-        return [value for value in vars(cls).values() if isinstance(value, Component)]
+    def analyze_sensitivity(self):
+        """ Runs a sensitivity analysis on the current engine and plots the results for both a variation in efficiencies
+        as well as a variation in certain key design parameters """
+        analysis = Sensitivity(self)
+        analysis.plot_param()
+        analysis.plot_eta()
 
     def get_eta_keys(self):
         """ Provides a list of all efficiency keys by accessing the superclass :py:class:`SpecParser` dictionary
@@ -191,6 +197,52 @@ class Engine(SpecParser):
         """
         return [key for key in vars(super(self.__class__, self)).keys() if 'eta' in key]
 
+    def write_csv(self):
+        components = self.get_components(output='keys')
+        station_list = ['2', '21', '13', '18', '25', '3', '4', '45', '5', '7', '8']
+        static_list = ['8', '18']  # List of stations where the static pressure is desired
+        station_dict = {}
+        still_to_find = station_list[:]  # Copying list object w/ slice operation
+
+        # First pass retrieves un-ordered keys
+        def get_values(flow_condition, args):
+            _still_to_find, _static_list, _station_dict = args
+            try:
+                station_number = flow_condition.station_number
+                if station_number in _still_to_find:
+                    _still_to_find.pop(_still_to_find.index(station_number))
+                    if station_number in static_list:
+                        _station_dict[station_number] = (station_number,
+                                                         flow_condition.p_static,
+                                                         flow_condition.t_static,
+                                                         flow_condition.mass_flow)
+                    else:
+                        _station_dict[station_number] = (station_number,
+                                                         flow_condition.p_total,
+                                                         flow_condition.t_total,
+                                                         flow_condition.mass_flow)
+            except AttributeError:
+                pass
+
+        for i, component in enumerate(components):
+            keys = set(vars(getattr(self, component).__class__).keys() + vars(getattr(self, component)).keys())
+            attributes = [getattr(getattr(self, component), key) for key in keys]
+            for attribute in attributes:
+                if isinstance(attribute, FlowCondition):
+                    get_values(attribute, args=(still_to_find, static_list, station_dict))
+
+        # Second pass writes ordered .csv file
+        with open(os.path.join(DIRS['CSV_DIR'], '{}_station_data.csv'.format(self.__name__)), "w") as csv:
+            for key in station_list:
+                station, p, t, m_dot = station_dict[key]
+                csv.write('{}, {}, {}, {}\n'.format(station, p, t, m_dot))
+
+    @classmethod
+    def get_components(cls, output='value'):
+        """ Gets all default values for the :py:class:`Component` or the associated keys """
+        return [value if output == 'value' else key for key, value in zip(vars(cls).keys(), vars(cls).values())
+                if isinstance(value, Component)]
+
 
 if __name__ == '__main__':
     obj = Engine(ideal_cycle=False)
@@ -198,3 +250,5 @@ if __name__ == '__main__':
     print(obj.sfc)
     print(obj.thrust)
     obj.calculate_cycle()
+    obj.analyze_sensitivity()
+    obj.write_csv()
