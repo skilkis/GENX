@@ -5,6 +5,7 @@
 
 from engine import Engine
 from components import AmbientInterface, Nozzle
+from definitions import FlowCondition
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
@@ -12,6 +13,10 @@ from utils import ProgressBar, Attribute
 from math import log
 
 __author__ = 'San Kilkis'
+
+# TODO Add ideal cycle image
+# TODO Add figure save capability
+# TODO Make sure static isobar connects point 8 to 0
 
 
 class LabelConfig(object):
@@ -260,13 +265,19 @@ class BraytonCycle(object):
         plt.xlabel(r'Specific Entropy $\left[\frac{\mathrm{J}}{\mathrm{kg} \cdot \mathrm{K}}\right]$')
         plt.ylabel(r'Temperature $\left[\mathrm{K}\right]$')
         plt.title(r'{} {} Cycle Diagram'.format(self.engine_in.__name__,
-                                               'Ideal' if self.engine_in.ideal_cycle else 'Real'))
+                                                'Ideal' if self.engine_in.ideal_cycle else 'Real'))
         plt.axis((s_min, s_max, t_min, t_max))
         plt.legend()
         plt.show()
 
 
 if __name__ == '__main__':
-    obj = BraytonCycle(engine_in=Engine(ideal_cycle=False))
+    ambient_conditions = FlowCondition(corrected_mass_flow=1160,
+                                       mach=0.7,
+                                       p_static=22632.,
+                                       t_static=216.,
+                                       medium='air',
+                                       station_number='0')
+    obj = BraytonCycle(engine_in=Engine(filename='GENX.cfg', ideal_cycle=False, ambient=ambient_conditions))
     resp = obj.specific_entropy
     obj.plot()

@@ -1,9 +1,6 @@
 # PyCharm Project Folder
 .idea/
 
-# User-Config Files
-*.cfg
-
 # Simulink Autosave Files
 .autosave
 
