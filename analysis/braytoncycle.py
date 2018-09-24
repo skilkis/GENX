@@ -3,14 +3,12 @@
 
 """ Contains all abstract class definitions  """
 
-from engine import Engine
 from components import AmbientInterface, Nozzle
-from definitions import FlowCondition
+from directories import DIRS
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
 from utils import ProgressBar, Attribute
-from math import log
 
 __author__ = 'San Kilkis'
 
@@ -46,7 +44,12 @@ class LabelConfig(object):
 
 class BraytonCycle(object):
 
-    def __init__(self, engine_in=Engine()):
+    def __init__(self, engine_in=None):
+        """
+
+        :param Engine engine_in:
+        """
+
         self.engine_in = engine_in
 
     @Attribute
@@ -65,7 +68,7 @@ class BraytonCycle(object):
         tol = {'temperature': 10., 'pressure': 1.}  # Tolerances for cache search procedure
 
         # Opening cache as read-only file to look-up stored values
-        with open('cache/entropy_table.dat') as cache:
+        with open(DIRS['ENTROPY_TABLE']) as cache:
             entries = cache.readlines()[1:]
             valid_entries = []
             for entry in entries:
@@ -100,7 +103,7 @@ class BraytonCycle(object):
                 s0 = float(filtered)  # Entropy in J/kg K
 
                 # Writing value to cache and returning
-                with open('cache/entropy_table.dat', 'a') as cache:
+                with open(DIRS['ENTROPY_TABLE'], 'a') as cache:
                     cache.write('\n{:.10f}\t{:.10f}\t{:.10f}'.format(temp, pres, s0))
                 prog.update(100, 'Complete')
                 return s0
@@ -229,8 +232,12 @@ class BraytonCycle(object):
                                     stg.inflow.specific_heat,
                                     stg.inflow.gas_constant)
 
-        s_range = np.linspace(s_inflow, s_inflow + delta_s, 100)
-        t_range = self.psuedo_t(t_inflow, t_outflow, s_range)
+        if self.engine_in.ideal_cycle and abs(delta_s) < 10e-6:  # Extra check to avoid div/0 due to machine precision
+            s_range = np.linspace(s_inflow, s_inflow + delta_s, 100)
+            t_range = np.linspace(t_inflow, t_outflow, 100)
+        else:
+            s_range = np.linspace(s_inflow, s_inflow + delta_s, 100)
+            t_range = self.psuedo_t(t_inflow, t_outflow, s_range)
 
         # Creating Station Label
         if label.iterable:
@@ -266,6 +273,9 @@ class BraytonCycle(object):
         plt.style.use('tudelft')
         s_0, t_0 = self.specific_entropy, self.engine_in.interface.inflow.t_static
 
+        # LabelConfigs
+        station_25 = LabelConfig(offset=(-4.5, 30) if self.engine_in.ideal_cycle else (-6.5, 25))
+
         # Values used for the Exact Solution
         # print(station_1[0].get_color()) # How to get station color
         s_interface, t_interface = self.plot_stage(self.engine_in.interface,
@@ -273,7 +283,7 @@ class BraytonCycle(object):
                                                                     station_number=('0', '1,2')))
         s_inlet, t_inlet = self.plot_stage(self.engine_in.inlet, s_interface, LabelConfig(None))
         s_fan, t_fan = self.plot_stage(self.engine_in.fan, s_inlet, LabelConfig(offset=(-8.5, 17.5)))
-        s_lpc, t_lpc = self.plot_stage(self.engine_in.lpc, s_fan, LabelConfig(offset=(-6.5, 25)))
+        s_lpc, t_lpc = self.plot_stage(self.engine_in.lpc, s_fan, station_25)
         s_hpc, t_hpc = self.plot_stage(self.engine_in.hpc, s_lpc)
         s_cc, t_cc = self.plot_stage(self.engine_in.combustor, s_hpc, LabelConfig(offset=(10, -10)))
         s_hpt, t_hpt = self.plot_stage(self.engine_in.hpt, s_cc)
@@ -283,8 +293,7 @@ class BraytonCycle(object):
         s_bypass, t_bypass = self.plot_stage(self.engine_in.nozzle_bypass, s_fan,
                                              LabelConfig(('inflow', 'outflow'), ((10, 10), (15, 30))))
 
-        self.plot_heat_rejection(s_0, s_core, t_0, t_core)
-
+        # Getting Plot Limits
         s_min, s_max = plt.gca().get_xbound()
         t_min, t_max = plt.gca().get_ybound()
 
@@ -293,6 +302,10 @@ class BraytonCycle(object):
         s_min, s_max = s_min * (1. - pad_factor), s_max * (1. + pad_factor)
         t_min, t_max = t_min * (1. - pad_factor), t_max * (1. + pad_factor)
 
+        # Plotting Heat Rejection (Ambient Process)
+        self.plot_heat_rejection(s_0, s_core, t_0, t_core)
+
+        # Plotting Isobaric Lines
         self.isobaric_lines(plot_bounds=(s_min, s_max, t_min, t_max),
                             lower_intercept=(s_inlet, self.engine_in.inlet.inflow.t_static),
                             upper_intercept=(s_hpc, self.engine_in.hpc.outflow.t_total), n_lines=5)
@@ -302,11 +315,11 @@ class BraytonCycle(object):
         plt.title(r'{} {} Cycle Diagram'.format(self.engine_in.__name__,
                                                 'Ideal' if self.engine_in.ideal_cycle else 'Real'))
         plt.axis((s_min, s_max, t_min, t_max))
-        plt.legend()
         plt.show()
 
 
 if __name__ == '__main__':
+    from engine import Engine
     obj = BraytonCycle(engine_in=Engine(filename='GENX.cfg', ideal_cycle=True))
     resp = obj.specific_entropy
     obj.plot()

@@ -3,7 +3,6 @@
 
 """ Contains all abstract class definitions  """
 
-from engine import Engine
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from utils import Attribute
@@ -19,7 +18,11 @@ __author__ = 'San Kilkis'
 
 class Sensitivity(object):
 
-    def __init__(self, engine_in=Engine()):
+    def __init__(self, engine_in=None):
+        """
+
+        :param Engine engine_in:
+        """
         self.engine_in = engine_in
         self.design_variable, self.design_range = None, None  # TODO Remove when functionality to plot 1 var is required
         self.filename, self.ideal_cycle, _, _, self.ambient = self.engine_in.args
@@ -153,6 +156,7 @@ class Sensitivity(object):
 
 
 if __name__ == '__main__':
+    from engine import Engine
     obj = Sensitivity(engine_in=Engine())
     obj.plot_eta()
     obj.plot_param()

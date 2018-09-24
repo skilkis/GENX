@@ -4,6 +4,7 @@
 """ ADD DOC """
 
 from definitions import Stage, FlowCondition
+import numpy as np
 
 __author__ = 'San Kilkis'
 
@@ -12,7 +13,7 @@ __author__ = 'San Kilkis'
 
 class Compressor(Stage):
 
-    def __init__(self, inflow, eta, pressure_ratio, station_number):
+    def __init__(self, inflow, eta, pressure_ratio, station_number, isentropic=False):
         """
 
         :param inflow:
@@ -23,6 +24,7 @@ class Compressor(Stage):
         self.eta = eta
         self.pressure_ratio = pressure_ratio
         self.station_number = station_number
+        self.isentropic = isentropic
 
     @property
     def t_total(self):
@@ -30,6 +32,13 @@ class Compressor(Stage):
         return self.inflow.t_total * (1 + (1/self.eta) *
                                       (((self.p_total / self.inflow.p_total)**((self.inflow.kappa - 1)
                                                                                / self.inflow.kappa)) - 1))
+
+    @property
+    def t_isentropic(self):
+        """ Total Temperature if the flow is was compressed Isentropically while maintaing pressure ratio of the stage
+        in SI Kelvin [K] """
+        return self.inflow.t_total * np.exp((self.gas_constant / self.inflow.specific_heat) *
+                                            np.log(self.p_total / self.inflow.p_total))
 
     @property
     def p_total(self):
@@ -44,7 +53,7 @@ class Compressor(Stage):
     @property
     def outflow(self):
         return FlowCondition(mass_flow=self.inflow.mass_flow,
-                             t_total=self.t_total,
+                             t_total=self.t_isentropic if self.isentropic else self.t_total,
                              p_total=self.p_total,
                              medium='air',
                              station_number=self.station_number)

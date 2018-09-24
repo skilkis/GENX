@@ -6,6 +6,7 @@
 from specparser import SpecParser
 from definitions import FlowCondition, Component, Attribute
 from components import *
+from analysis import Sensitivity, BraytonCycle
 import numpy as np
 
 __author__ = 'San Kilkis'
@@ -91,7 +92,8 @@ class Engine(SpecParser):
         return Fan(inflow=self.inlet.outflow,
                    eta=self.eta_fan,
                    pressure_ratio=self.pr_fan,
-                   station_number='21')
+                   station_number='21',
+                   isentropic=self.ideal_cycle)
 
     @Component
     def bypass(self):
@@ -103,14 +105,16 @@ class Engine(SpecParser):
         return Compressor(inflow=self.bypass.outflow_core,
                           eta=self.eta_lpc,
                           pressure_ratio=self.pr_lpc,
-                          station_number='25')
+                          station_number='25',
+                          isentropic=self.ideal_cycle)
 
     @Component
     def hpc(self):
         return Compressor(inflow=self.lpc.outflow,
                           eta=self.eta_hpc,
                           pressure_ratio=self.pr_hpc,
-                          station_number='3')
+                          station_number='3',
+                          isentropic=self.ideal_cycle)
 
     @Component
     def combustor(self):
@@ -134,14 +138,16 @@ class Engine(SpecParser):
         return Turbine(inflow=self.combustor.outflow,
                        spool_in=self.hp_spool,
                        eta=self.eta_hpt,
-                       station_number='45')
+                       station_number='45',
+                       isentropic=self.ideal_cycle)
 
     @Component
     def lpt(self):
         return Turbine(inflow=self.hpt.outflow,
                        spool_in=self.lp_spool,
                        eta=self.eta_lpt,
-                       station_number='5')
+                       station_number='5',
+                       isentropic=self.ideal_cycle)
 
     @Component
     def nozzle_core(self):
@@ -171,6 +177,9 @@ class Engine(SpecParser):
         """ Thrust Specific Fuel Consumption (TSFC) in SI gram per kilo-Newton second [g/kN s] """
         return (self.combustor.fuel_flow / self.thrust) * 1e6
 
+    def calculate_cycle(self):
+        BraytonCycle(self).plot()
+
     @classmethod
     def get_components(cls):
         return [value for value in vars(cls).values() if isinstance(value, Component)]
@@ -184,7 +193,8 @@ class Engine(SpecParser):
 
 
 if __name__ == '__main__':
-    obj = Engine(ideal_cycle=True)
+    obj = Engine(ideal_cycle=False)
     print(obj.design_range)
     print(obj.sfc)
     print(obj.thrust)
+    obj.calculate_cycle()

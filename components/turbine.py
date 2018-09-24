@@ -4,15 +4,14 @@
 """ ADD DOC """
 
 from definitions import Stage, FlowCondition
+import numpy as np
 
 __author__ = 'San Kilkis'
-
-# TODO add function for plotting line on TS diagram
 
 
 class Turbine(Stage):
 
-    def __init__(self, inflow, eta, spool_in, station_number):
+    def __init__(self, inflow, eta, spool_in, station_number, isentropic=False):
         """
 
         :param inflow:
@@ -24,6 +23,7 @@ class Turbine(Stage):
         self.eta = eta
         self.spool_in = spool_in
         self.station_number = station_number
+        self.isentropic = isentropic
 
     @property
     def work_output(self):
@@ -56,11 +56,21 @@ class Turbine(Stage):
                                       ** (self.inflow.kappa / (self.inflow.kappa - 1.)))
 
     @property
+    def p_isentropic(self):
+        """ Total pressure at the end of the Turbine stage in SI Pascal [Pa] if the expansion process were to be
+        isentropic (delta_s = 0).
+
+        :rtype: float
+        """
+        return self.inflow.p_total * np.exp((self.inflow.specific_heat / self.gas_constant) *
+                                            np.log(self.t_total / self.inflow.t_total))
+
+    @property
     def outflow(self):
         """ Represents the flow conditions at the end of the Turbine """
         return FlowCondition(mass_flow=self.inflow.mass_flow,
                              t_total=self.t_total,
-                             p_total=self.p_total,
+                             p_total=self.p_isentropic if self.isentropic else self.p_total,
                              medium='gas',
                              station_number=self.station_number)
 
