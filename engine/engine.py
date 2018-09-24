@@ -14,10 +14,10 @@ __author__ = 'San Kilkis'
 class Engine(SpecParser):
 
     def __init__(self, filename='GE90.cfg', ideal_cycle=False, design_variable=None, design_range=None,
-                 ambient=FlowCondition(corrected_mass_flow=1400.,
-                                       mach=0.8,
-                                       p_static=22632.,
-                                       t_static=216.,
+                 ambient=FlowCondition(corrected_mass_flow=1160,
+                                       mach=0.7,
+                                       p_static=30148.3,
+                                       t_static=228.1,
                                        medium='air',
                                        station_number='0')):
         """
@@ -33,6 +33,9 @@ class Engine(SpecParser):
         self.ideal_cycle = ideal_cycle
         self.design_variable = design_variable
         self.ambient = ambient
+        self.original_index = None
+
+        self.args = (filename, ideal_cycle, design_variable, design_range, ambient)
 
         # Converting Engine to be an ideal cycle
         if self.ideal_cycle:
@@ -76,6 +79,7 @@ class Engine(SpecParser):
             lower = 0.9 * current_value
             lower_range, step = np.linspace(lower, current_value, n // 2, retstep=True)
             upper_range = np.arange(current_value, upper, step)[1:]  # Ensures that current_value is present in output
+            self.original_index = len(lower_range) - 1  # Updates w/ index of current_value
             return np.append(lower_range, upper_range)
 
     @Component
@@ -185,7 +189,7 @@ class Engine(SpecParser):
 
 
 if __name__ == '__main__':
-    obj = Engine(ideal_cycle=False, design_variable='eta_nozzle')
+    obj = Engine(ideal_cycle=False)
     print(obj.design_range)
     print(obj.sfc)
     print(obj.thrust)

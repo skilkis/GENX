@@ -5,6 +5,7 @@
 
 from definitions import Stage, FlowCondition
 from collections import Iterable
+import numpy as np
 
 __author__ = 'San Kilkis'
 
@@ -53,7 +54,19 @@ class Nozzle(Stage):
     def choked(self):
         """ Boolean switch case that returns ``True`` if the flow is chocked else ``False`` """
         # TODO use isintance(self.p_total, Iterable) and create a new conditional that checks each entry in vector
-        return True
+
+        @np.vectorize
+        def check(p_total, p_critical):
+            if p_total > p_critical:
+                # print('{}: Nozzle is choked! Total pressure {} [Pa]'
+                #       ' exceeds critical pressure of {} [Pa]'.format(self, self.p_total, self.p_critical))
+                return True
+            else:
+                raise ValueError('Nozzle is not choked thus the mach number at the exit is not known,'
+                                 ' stopping calculation')
+
+        return check(self.p_total, self.p_critical)
+
         # if self.p_total > self.p_critical:
         #     # print('{}: Nozzle is choked! Total pressure {} [Pa]'
         #     #       ' exceeds critical pressure of {} [Pa]'.format(self, self.p_total, self.p_critical))
@@ -142,7 +155,7 @@ class Nozzle(Stage):
     def outflow(self):
         """ Represents the flow conditions after the nozzle throat """
         return FlowCondition(mass_flow=self.inflow.mass_flow,
-                             mach=1. if self.choked else None,
+                             mach=1. if self.choked.any() else None,
                              t_static=self.t_exit,
                              p_static=self.p_exit,
                              medium=self.inflow.medium,
