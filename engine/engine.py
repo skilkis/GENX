@@ -4,7 +4,7 @@
 """ Contains all abstract class definitions  """
 
 from specparser import SpecParser
-from definitions import FlowCondition, Component
+from definitions import FlowCondition, Component, Attribute
 from components import *
 import numpy as np
 
@@ -13,8 +13,8 @@ __author__ = 'San Kilkis'
 
 class Engine(SpecParser):
 
-    def __init__(self, filename='GE90.cfg', ideal_cycle=False, design_variable=None, design_range=None,
-                 ambient=FlowCondition(corrected_mass_flow=1160,
+    def __init__(self, filename='GENX.cfg', ideal_cycle=False, design_variable=None, design_range=None,
+                 ambient=FlowCondition(corrected_mass_flow=1160.,
                                        mach=0.7,
                                        p_static=30148.3,
                                        t_static=228.1,
@@ -32,7 +32,7 @@ class Engine(SpecParser):
         super(Engine, self).__init__(filename)
         self.ideal_cycle = ideal_cycle
         self.design_variable = design_variable
-        self.ambient = ambient
+        self.ambient = ambient if ambient is not None else self.ambient
         self.original_index = None
 
         self.args = (filename, ideal_cycle, design_variable, design_range, ambient)

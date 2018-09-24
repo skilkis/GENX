@@ -5,6 +5,7 @@
 
 from constants import *
 from directories import DIRS
+from definitions import FlowCondition
 import os
 try:
     import ConfigParser as config
@@ -44,6 +45,16 @@ class SpecParser(object):
         for section in cfg.sections():
             entries += cfg.items(section)
         return dict(entries)
+
+    @Attribute
+    def ambient(self):
+        """ Creates an ambient flow condition from specifications in the engine.cfg file """
+        return FlowCondition(mach=float(self.reader['mach']),
+                             p_static=float(self.reader['p_static']),
+                             t_static=float(self.reader['t_static']),
+                             corrected_mass_flow=self.corrected_mass_flow,
+                             medium='air',
+                             station_number='0')
 
     @Attribute
     def corrected_mass_flow(self):
