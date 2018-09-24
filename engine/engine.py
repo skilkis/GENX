@@ -18,7 +18,8 @@ class Engine(SpecParser):
                                        mach=0.8,
                                        p_static=22632.,
                                        t_static=216.,
-                                       medium='air')):
+                                       medium='air',
+                                       station_number='0')):
         """
         :param str filename: Filename w/ extension of desired engine
         :param bool ideal_cycle: Toggles if the compression and expansion processes are isentropic
@@ -78,8 +79,12 @@ class Engine(SpecParser):
             return np.append(lower_range, upper_range)
 
     @Component
+    def interface(self):
+        return AmbientInterface(ambient=self.ambient)
+
+    @Component
     def inlet(self):
-        return Inlet(ambient=self.ambient,
+        return Inlet(inflow=self.interface.outflow,
                      eta=self.eta_inlet)
 
     @Component

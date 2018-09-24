@@ -37,7 +37,7 @@ class Fan(Compressor):
 if __name__ == '__main__':
     ambient_conditions = FlowCondition(corrected_mass_flow=1400.,
                                        mach=0.8, t_static=216, p_static=22632, station_number='1', medium='air')
-    inlet = Inlet(ambient=ambient_conditions, eta=0.98)
+    inlet = Inlet(inflow=ambient_conditions, eta=0.98)
     obj = Fan(inflow=inlet.outflow, eta=0.92, pressure_ratio=1.6, station_number='2')
     print(obj.t_total)
     print(obj.p_total)

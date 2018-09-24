@@ -1,4 +1,4 @@
-from inlet import Inlet
+from inlet import Inlet, AmbientInterface
 from fan import Fan
 from bypass import Bypass
 from compressor import Compressor

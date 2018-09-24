@@ -4,7 +4,7 @@
 """ Contains all abstract class definitions  """
 
 from engine import Engine
-from components import Inlet
+from components import AmbientInterface, Nozzle
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
@@ -12,6 +12,31 @@ from utils import ProgressBar, Attribute
 from math import log
 
 __author__ = 'San Kilkis'
+
+
+class LabelConfig(object):
+
+    __slots__ = ['location', 'offset', 'iterable', 'station_number']
+
+    def __init__(self, location='outflow', offset=(-10, 10), station_number=None):
+        """
+
+        :param str or collections.Sequence[str] location: Defines label location, can be iterable
+        :param collections.Sequence[tuple] or tuple offset:
+        """
+
+        self.location = location
+        self.station_number = station_number
+
+        if isinstance(location, tuple):
+            self.iterable = True
+            if isinstance(offset[0], tuple):
+                self.offset = offset
+            else:
+                self.offset = (offset, offset)
+        else:
+            self.iterable = False
+            self.offset = offset
 
 
 class BraytonCycle(object):
@@ -116,9 +141,16 @@ class BraytonCycle(object):
         s_range = np.arange(s_min, s_max, s_min/100.)
         for t in t_range:
             t_values = t * np.exp((s_range - s_min) / self.engine_in.ambient.specific_heat_air)
-            plt.plot(s_range, t_values, alpha=1.0, color='black', linewidth=0.5, linestyle='--')
+            plt.plot(s_range, t_values, alpha=1.0, color='black', linewidth=0.5, linestyle='--', zorder=0)
 
-    def plot_stage(self, stage_in, s_inflow, offset=(10, 10)):
+    def plot_stage(self, stage_in, s_inflow, label=LabelConfig()):
+        """
+
+        :param stage_in:
+        :param s_inflow:
+        :param LabelConfig label:
+        :return:
+        """
 
         stg = stage_in
 
@@ -147,34 +179,49 @@ class BraytonCycle(object):
 
             return t1 * np.exp(np.log(t2 / t1) * ((s_array - s_start) / (s_end - s_start)))
 
-        if isinstance(stg, Inlet):
+        # Selecting start/end temperature and pressure depending on stage type
+        if isinstance(stg, AmbientInterface):
             t_inflow, t_outflow = stg.inflow.t_static, stg.outflow.t_total
             p_inflow, p_outflow = stg.inflow.p_static, stg.outflow.p_total
+        elif isinstance(stg, Nozzle):
+            t_inflow, t_outflow = stg.inflow.t_total, stg.outflow.t_static
+            p_inflow, p_outflow = stg.inflow.p_total, stg.outflow.p_static
         else:
             t_inflow, t_outflow = stg.inflow.t_total, stg.outflow.t_total
             p_inflow, p_outflow = stg.inflow.p_total, stg.outflow.p_total
 
         delta_s = entropy_func(t_inflow, t_outflow, p_inflow, p_outflow)
-        print(delta_s)
-
         s_range = np.linspace(s_inflow, s_inflow + delta_s, 100)
         t_range = psuedo_t(t_inflow, t_outflow, s_range)
 
-        bbox = dict(boxstyle="round", fc="0.8")
-        arrowprops = dict(
-            arrowstyle="->",
-            connectionstyle="angle,angleA=0,angleB=90,rad=10",
-            color='black')
+        def create_label(station_number, s, t, offset):
+            h_offset, v_offset = offset[0], offset[1]
+            bbox = dict(boxstyle='circle', fc="0.8", ec='0.7')
+            arrowprops = dict(arrowstyle="->",
+                              connectionstyle='angle,angleA={},angleB=180,rad=2'.format(-90 if v_offset > 0 else 90),
+                              color='black')
+            plt.annotate(station_number, (s, t),
+                         xytext=(2. * h_offset, v_offset if v_offset > 0 else v_offset * 1.65),
+                         textcoords='offset points',
+                         bbox=bbox, arrowprops=arrowprops, fontsize=7,
+                         horizontalalignment='center',
+                         verticalalignment='left')
 
-        # offset = 10
-        h_offset, v_offset = offset[0], offset[1]
-        plt.annotate(stg.outflow.station_number, (s_inflow + delta_s, t_outflow),
-                     xytext=(-2 * h_offset, v_offset), textcoords='offset points',
-                     bbox=bbox, arrowprops=arrowprops, fontsize=7)
+        # Creating Station Label
+        if label.iterable:
+            for i, loc in enumerate(label.location):
+                create_label(getattr(stg, loc).station_number if label.station_number is None else label.station_number,
+                             s_inflow if loc == 'inflow' else s_inflow + delta_s,
+                             t_inflow if loc == 'inflow' else t_outflow, label.offset[i])
+        else:
+            loc = label.location
+            create_label(getattr(stg, loc).station_number if label.station_number is None else label.station_number,
+                         s_inflow if loc == 'inflow' else s_inflow + delta_s,
+                         t_inflow if loc == 'inflow' else t_outflow, label.offset)
 
         plt.plot(s_range, t_range, color='#00A6D6')
-        start_marker = plt.plot(s_inflow, t_inflow, marker='o', markerfacecolor='white', markeredgecolor='#00A6D6')
-        plt.plot(s_inflow + delta_s, t_outflow, marker='o', markerfacecolor='white', markeredgecolor='#00A6D6')
+        plt.plot(s_inflow, t_inflow, marker='o', markerfacecolor='white', markeredgecolor='#00A6D6') # Start Mrk.
+        plt.plot(s_inflow + delta_s, t_outflow, marker='o', markerfacecolor='white', markeredgecolor='#00A6D6') # End
         return s_inflow + delta_s
 
     def plot(self):
@@ -185,31 +232,41 @@ class BraytonCycle(object):
 
         # Values used for the Exact Solution
         # print(station_1[0].get_color()) # How to get station color
-        s_inlet = self.plot_stage(self.engine_in.inlet, s_0)
-        s_fan = self.plot_stage(self.engine_in.fan, s_inlet, offset=(-10, 10))
-        s_lpc = self.plot_stage(self.engine_in.lpc, s_fan, offset=(-10, 10))
+        s_interface = self.plot_stage(self.engine_in.interface, s_0, LabelConfig(('inflow', 'outflow'),
+                                                                                 ((-20, 10), (-12.5, 12.5))))
+        s_inlet = self.plot_stage(self.engine_in.inlet, s_interface, LabelConfig(offset=(10, 10)))
+        s_fan = self.plot_stage(self.engine_in.fan, s_inlet, LabelConfig(offset=(-10, 17.5)))
+        s_lpc = self.plot_stage(self.engine_in.lpc, s_fan, LabelConfig(offset=(-6.5, 25)))
         s_hpc = self.plot_stage(self.engine_in.hpc, s_lpc)
-        s_cc = self.plot_stage(self.engine_in.combustor, s_hpc)
-        s_hpt = self.plot_stage(self.engine_in.hpt, s_cc, offset=(-10, 10))
-        s_lpt = self.plot_stage(self.engine_in.lpt, s_hpt)
-        s_hot_nozzle = self.plot_stage(self.engine_in.nozzle_core, s_lpt)
-        s_cold_nozzle = self.plot_stage(self.engine_in.nozzle_bypass, s_fan)
+        s_cc = self.plot_stage(self.engine_in.combustor, s_hpc, LabelConfig(offset=(10, -10)))
+        s_hpt = self.plot_stage(self.engine_in.hpt, s_cc)
+        s_lpt = self.plot_stage(self.engine_in.lpt, s_hpt, LabelConfig(offset=(10, 10), station_number='5, 7'))
+
+        self.plot_stage(self.engine_in.nozzle_core, s_lpt)
+        # self.plot_stage(self.engine_in.nozzle_bypass, s_fan)
 
         s_min, s_max = plt.gca().get_xbound()
         t_min, t_max = plt.gca().get_ybound()
+
+        # Percentage Pad
+        pad_factor = 0.025
+        s_min, s_max = s_min * (1. - pad_factor), s_max * (1. + pad_factor)
+        t_min, t_max = t_min * (1. - pad_factor), t_max * (1. + pad_factor)
+
         self.isobaric_lines(plot_bounds=(s_min, s_max, t_min, t_max),
                             lower_intercept=(s_inlet, self.engine_in.inlet.inflow.t_static),
                             upper_intercept=(s_hpc, self.engine_in.hpc.outflow.t_total), n_lines=5)
 
         plt.xlabel(r'Specific Entropy $\left[\frac{\mathrm{J}}{\mathrm{kg} \cdot \mathrm{K}}\right]$')
         plt.ylabel(r'Temperature $\left[\mathrm{K}\right]$')
-        plt.title(r'Test')
+        plt.title(r'{} {} Cycle Diagram'.format(self.engine_in.__name__,
+                                               'Ideal' if self.engine_in.ideal_cycle else 'Real'))
         plt.axis((s_min, s_max, t_min, t_max))
         plt.legend()
         plt.show()
 
 
 if __name__ == '__main__':
-    obj = BraytonCycle(engine_in=Engine(ideal_cycle=True))
+    obj = BraytonCycle(engine_in=Engine(ideal_cycle=False))
     resp = obj.specific_entropy
     obj.plot()
