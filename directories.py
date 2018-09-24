@@ -105,9 +105,10 @@ def get_dir(folder_name=None):
             raise TypeError(msg)
 
 
-DIRS = {'ENGINE_DIR': get_dir('engine\data'),
-        'CSV_DIR': get_dir('analysis\output'),
-        'ENTROPY_TABLE': get_dir('analysis\cache\entropy_table.dat')}
+DIRS = {'ENGINE_DIR': get_dir('engine/data'),
+        'CSV_DIR': get_dir('analysis/output'),
+        'ENTROPY_TABLE_DIR': get_dir('analysis/cache/entropy_table.dat'),
+        'FIGURE_DIR': get_dir('analysis/figures')}
 
 if __name__ == '__main__':
     print(get_dir('user'))

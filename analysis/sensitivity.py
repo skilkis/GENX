@@ -26,7 +26,8 @@ class Sensitivity(object):
         self.engine_in = engine_in
         self.design_variable, self.design_range = None, None  # TODO Remove when functionality to plot 1 var is required
         self.filename, self.ideal_cycle, _, _, self.ambient = self.engine_in.args
-        self.slope_cache = {'thrust': {}, 'sfc': {}}
+        self.slope_cache_param = {'thrust': {}, 'sfc': {}}
+        self.slope_cache_eta = {'thrust': {}, 'sfc': {}}
 
         if self.design_variable is None:
             self.design_variable = ['eta_fan', 'eta_lpc', 'eta_hpc', 'eta_lpt', 'eta_hpt', 'eta_mech',
@@ -62,8 +63,8 @@ class Sensitivity(object):
             output += [(percentage, thrust_response, sfc_response)]
 
             # Calculating Slopes and adding to the :py:attr`slope_cache`
-            self.slope_cache['thrust'][var] = curve_fit(self.func, percentage, thrust_response)[0][0]
-            self.slope_cache['sfc'][var] = curve_fit(self.func, percentage, sfc_response)[0][0]
+            self.slope_cache_param['thrust'][var] = curve_fit(self.func, percentage, thrust_response)[0][0]
+            self.slope_cache_param['sfc'][var] = curve_fit(self.func, percentage, sfc_response)[0][0]
 
         return output
 
@@ -111,16 +112,27 @@ class Sensitivity(object):
         plt.legend(loc='right', fontsize=8)
         sfc.set_xlabel(r'Percentage Change of Design Parameter $\left[\%\right]$')
         plt.show()
+        fig.savefig(os.path.join(DIRS['FIGURE_DIR'], '{}_param_sens'.format(self.engine_in.__name__)))
 
     def write_csv(self):
         with open(os.path.join(DIRS['CSV_DIR'], '{}_param_slope.csv'.format(self.engine_in.__name__)), "w") as csv:
-            for key, sfc_slope, thrust_slope in zip(obj.slope_cache['sfc'].keys(), obj.slope_cache['sfc'].values(),
-                                                    obj.slope_cache['thrust'].values()):
+
+            for key, sfc_slope, thrust_slope in zip(obj.slope_cache_param['sfc'].keys(),
+                                                    obj.slope_cache_param['sfc'].values(),
+                                                    obj.slope_cache_param['thrust'].values()):
+
+                csv.write('{}, {}, {}\n'.format(key, sfc_slope, thrust_slope))
+
+        with open(os.path.join(DIRS['CSV_DIR'], '{}_eta_slope.csv'.format(self.engine_in.__name__)), "w") as csv:
+
+            for key, sfc_slope, thrust_slope in zip(obj.slope_cache_eta['sfc'].keys(),
+                                                    obj.slope_cache_eta['sfc'].values(),
+                                                    obj.slope_cache_eta['thrust'].values()):
+
                 csv.write('{}, {}, {}\n'.format(key, sfc_slope, thrust_slope))
 
     def plot_eta(self):
         plt.style.use('tudelft')
-        fig = plt.figure('{}_eta_sens'.format(self.engine_in.__name__))
         fig, (thrust, sfc) = plt.subplots(2, 1, num='{} Efficiency Sensitivity'.format(self.engine_in.__name__),
                                           sharex='all')
 
@@ -134,25 +146,45 @@ class Sensitivity(object):
         for i, var in enumerate(self.design_variable):
             cycle_count = i % len(linestyles)
             style = linestyles[cycle_count]
+            eta_0 = getattr(Engine(self.filename, self.ideal_cycle, self.ambient), var)
             engine_sim = Engine(self.filename, self.ideal_cycle, var, self.design_range, self.ambient)
-            thrust.plot(engine_sim.design_range, engine_sim.thrust,
+
+            percentage_scale = ((engine_sim.design_range / eta_0) - 1.) * 100
+
+            self.slope_cache_eta['thrust'][var] = curve_fit(self.func, percentage_scale, engine_sim.thrust)[0][0]
+            self.slope_cache_eta['sfc'][var] = curve_fit(self.func, percentage_scale, engine_sim.sfc)[0][0]
+
+            thrust.plot(percentage_scale, engine_sim.thrust,
                         label=r'$\eta_{\mathrm{%s}}$' % var.split('_')[-1],
                         linestyle=style,
                         linewidth=1.0)
-            sfc.plot(engine_sim.design_range, engine_sim.sfc,
+            sfc.plot(percentage_scale, engine_sim.sfc,
                      label=r'$\eta_{\mathrm{%s}}$' % var.split('_')[-1],
                      linestyle=style,
                      linewidth=1.0)
+
+        thrust.plot(0., self.engine_in.thrust, marker='o',
+                    linewidth=0.,
+                    markerfacecolor='white',
+                    markeredgecolor='black',
+                    label='Design Point')
+
+        sfc.plot(0., self.engine_in.sfc, marker='o',
+                 linewidth=0.,
+                 markerfacecolor='white',
+                 markeredgecolor='black',
+                 label='Design Point')
 
         # plt.xlabel(r'Specific Entropy $\left[\frac{\mathrm{J}}{\mathrm{kg} \cdot \mathrm{K}}\right]$')
         # plt.ylabel(r'Temperature $\left[\mathrm{K}\right]$')
         # plt.title(r'{} Sensitivity Analysis'.format(self.engine_in.__name__))
         plt.legend(loc='right', fontsize=8)
-        sfc.set_xlabel(r'Efficiency $\left[-\right]$')
+        sfc.set_xlabel(r'Percentage Change of Efficiency $\left[\%\right]$')
         x_min, x_max = plt.gca().get_xbound()
         y_min, y_max = plt.gca().get_ybound()
         plt.axis([x_min, x_max, y_min, y_max])
         plt.show()
+        fig.savefig(os.path.join(DIRS['FIGURE_DIR'], '{}_eta_sens'.format(self.engine_in.__name__)))
 
 
 if __name__ == '__main__':

@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import requests
 from utils import ProgressBar, Attribute
+import os
 
 __author__ = 'San Kilkis'
 
@@ -68,7 +69,7 @@ class BraytonCycle(object):
         tol = {'temperature': 10., 'pressure': 1.}  # Tolerances for cache search procedure
 
         # Opening cache as read-only file to look-up stored values
-        with open(DIRS['ENTROPY_TABLE']) as cache:
+        with open(DIRS['ENTROPY_TABLE_DIR']) as cache:
             entries = cache.readlines()[1:]
             valid_entries = []
             for entry in entries:
@@ -103,7 +104,7 @@ class BraytonCycle(object):
                 s0 = float(filtered)  # Entropy in J/kg K
 
                 # Writing value to cache and returning
-                with open(DIRS['ENTROPY_TABLE'], 'a') as cache:
+                with open(DIRS['ENTROPY_TABLE_DIR'], 'a') as cache:
                     cache.write('\n{:.10f}\t{:.10f}\t{:.10f}'.format(temp, pres, s0))
                 prog.update(100, 'Complete')
                 return s0
@@ -316,6 +317,7 @@ class BraytonCycle(object):
                                                 'Ideal' if self.engine_in.ideal_cycle else 'Real'))
         plt.axis((s_min, s_max, t_min, t_max))
         plt.show()
+        fig.savefig(os.path.join(DIRS, plt.figure.__name__))
 
 
 if __name__ == '__main__':
