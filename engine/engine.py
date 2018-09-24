@@ -14,12 +14,7 @@ __author__ = 'San Kilkis'
 class Engine(SpecParser):
 
     def __init__(self, filename='GENX.cfg', ideal_cycle=False, design_variable=None, design_range=None,
-                 ambient=FlowCondition(corrected_mass_flow=1160.,
-                                       mach=0.7,
-                                       p_static=30148.3,
-                                       t_static=228.1,
-                                       medium='air',
-                                       station_number='0')):
+                 ambient=None):
         """
         :param str filename: Filename w/ extension of desired engine
         :param bool ideal_cycle: Toggles if the compression and expansion processes are isentropic
@@ -189,7 +184,7 @@ class Engine(SpecParser):
 
 
 if __name__ == '__main__':
-    obj = Engine(ideal_cycle=False)
+    obj = Engine(ideal_cycle=True)
     print(obj.design_range)
     print(obj.sfc)
     print(obj.thrust)

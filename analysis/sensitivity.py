@@ -4,13 +4,11 @@
 """ Contains all abstract class definitions  """
 
 from engine import Engine
-from components import AmbientInterface, Nozzle
-from definitions import FlowCondition
-import numpy as np
 import matplotlib.pyplot as plt
-import requests
-from utils import ProgressBar, Attribute
-from math import log
+from scipy.optimize import curve_fit
+from utils import Attribute
+from directories import *
+import os
 
 __author__ = 'San Kilkis'
 
@@ -25,6 +23,7 @@ class Sensitivity(object):
         self.engine_in = engine_in
         self.design_variable, self.design_range = None, None  # TODO Remove when functionality to plot 1 var is required
         self.filename, self.ideal_cycle, _, _, self.ambient = self.engine_in.args
+        self.slope_cache = {'thrust': {}, 'sfc': {}}
 
         if self.design_variable is None:
             self.design_variable = ['eta_fan', 'eta_lpc', 'eta_hpc', 'eta_lpt', 'eta_hpt', 'eta_mech',
@@ -33,9 +32,40 @@ class Sensitivity(object):
         else:
             self.design_variable = (self.design_variable, )  # Prevents looping through the string below
 
+    @staticmethod
+    def func(x, a):
+        """ Defines a linear regression function without intercept y(x) = a*x
+
+        :param x: Value(s) on the x-axis which correspond to the disk_loading
+        :type x: int, float, list
+        :param a: slope
+        """
+        return a * x
+
+    @Attribute
+    def param_sim(self):
+
+        param_list = ['combustion_temperature', 'bypass_ratio', 'pr_cc', 'pr_fan', 'pr_lpc', 'pr_hpc']
+        output = []
+
+        for i, var in enumerate(param_list):
+            engine_sim = Engine(self.filename, self.ideal_cycle, var, self.design_range, self.ambient)
+
+            percentage = ((engine_sim.design_range / engine_sim.design_range[engine_sim.original_index]) - 1.) * 100
+            thrust_response = engine_sim.thrust
+            sfc_response = engine_sim.sfc
+
+            # Appending to the output_list
+            output += [(percentage, thrust_response, sfc_response)]
+
+            # Calculating Slopes and adding to the :py:attr`slope_cache`
+            self.slope_cache['thrust'][var] = curve_fit(self.func, percentage, thrust_response)[0][0]
+            self.slope_cache['sfc'][var] = curve_fit(self.func, percentage, sfc_response)[0][0]
+
+        return output
+
     def plot_param(self):
         plt.style.use('tudelft')
-        fig = plt.figure('{}_param_sens'.format(self.engine_in.__name__))
         fig, (thrust, sfc) = plt.subplots(2, 1, num='{} Efficiency Sensitivity'.format(self.engine_in.__name__),
                                           sharex='all')
 
@@ -47,12 +77,6 @@ class Sensitivity(object):
 
         linestyles = [':', '-.', '-']
 
-        design_variables = ['combustion_temperature',
-                            'bypass_ratio',
-                            'pr_cc', 'pr_fan',
-                            'pr_lpc',
-                            'pr_hpc']
-
         label_list = [r'$T_{4}$',
                       'BPR',
                       r'$\Pi_{\mathrm{cc}}$',
@@ -60,34 +84,36 @@ class Sensitivity(object):
                       r'$\Pi_{\mathrm{lpc}}$',
                       r'$\Pi_{\mathrm{hpc}}$']
 
-        for i, var in enumerate(design_variables):
+        for i, entry in enumerate(self.param_sim):
             cycle_count = i % len(linestyles)
             style = linestyles[cycle_count]
-            engine_sim = Engine(self.filename, self.ideal_cycle, var, self.design_range, self.ambient)
-            percentages = ((engine_sim.design_range / engine_sim.design_range[engine_sim.original_index]) - 1.) * 100
-            thrust.plot(percentages, engine_sim.thrust, label=label_list[i], linestyle=style, linewidth=1.0)
-            sfc.plot(percentages, engine_sim.sfc, label=label_list[i], linestyle=style, linewidth=1.0)
+
+            percent, thrust_response, sfc_response = entry
+
+            thrust.plot(percent, thrust_response, label=label_list[i], linestyle=style, linewidth=1.0)
+            sfc.plot(percent, sfc_response, label=label_list[i], linestyle=style, linewidth=1.0)
 
         thrust.plot(0., self.engine_in.thrust, marker='o',
                     linewidth=0.,
                     markerfacecolor='white',
                     markeredgecolor='black',
                     label='Design Point')
+
         sfc.plot(0., self.engine_in.sfc, marker='o',
                  linewidth=0.,
                  markerfacecolor='white',
                  markeredgecolor='black',
                  label='Design Point')
 
-        # plt.xlabel(r'Specific Entropy $\left[\frac{\mathrm{J}}{\mathrm{kg} \cdot \mathrm{K}}\right]$')
-        # plt.ylabel(r'Temperature $\left[\mathrm{K}\right]$')
-        # plt.title(r'{} Sensitivity Analysis'.format(self.engine_in.__name__))
-        plt.legend(fontsize=8)
+        plt.legend(loc='right', fontsize=8)
         sfc.set_xlabel(r'Percentage Change of Design Parameter $\left[\%\right]$')
-        x_min, x_max = plt.gca().get_xbound()
-        y_min, y_max = plt.gca().get_ybound()
-        plt.axis([x_min, x_max, y_min, y_max])
         plt.show()
+
+    def write_csv(self):
+        with open(os.path.join(DIRS['CSV_DIR'], '{}_param_slope.csv'.format(self.engine_in.__name__)), "w") as csv:
+            for key, sfc_slope, thrust_slope in zip(obj.slope_cache['sfc'].keys(), obj.slope_cache['sfc'].values(),
+                                                    obj.slope_cache['thrust'].values()):
+                csv.write('{}, {}, {}\n'.format(key, sfc_slope, thrust_slope))
 
     def plot_eta(self):
         plt.style.use('tudelft')
@@ -118,7 +144,7 @@ class Sensitivity(object):
         # plt.xlabel(r'Specific Entropy $\left[\frac{\mathrm{J}}{\mathrm{kg} \cdot \mathrm{K}}\right]$')
         # plt.ylabel(r'Temperature $\left[\mathrm{K}\right]$')
         # plt.title(r'{} Sensitivity Analysis'.format(self.engine_in.__name__))
-        plt.legend(fontsize=8)
+        plt.legend(loc='right', fontsize=8)
         sfc.set_xlabel(r'Efficiency $\left[-\right]$')
         x_min, x_max = plt.gca().get_xbound()
         y_min, y_max = plt.gca().get_ybound()
@@ -130,3 +156,4 @@ if __name__ == '__main__':
     obj = Sensitivity(engine_in=Engine())
     obj.plot_eta()
     obj.plot_param()
+    obj.write_csv()

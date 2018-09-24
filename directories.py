@@ -105,7 +105,8 @@ def get_dir(folder_name=None):
             raise TypeError(msg)
 
 
-DIRS = {'ENGINE_DIR': get_dir('engine\data')}
+DIRS = {'ENGINE_DIR': get_dir('engine\data'),
+        'CSV_DIR': get_dir('analysis\output')}
 
 if __name__ == '__main__':
     print(get_dir('user'))
