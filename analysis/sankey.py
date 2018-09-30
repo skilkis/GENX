@@ -172,7 +172,7 @@ class SankeyDiagram(object):
 
 if __name__ == '__main__':
     from engine import Engine
-    obj = SankeyDiagram(engine_in=Engine(filename='GENX.cfg', ideal_cycle=True))
+    obj = SankeyDiagram(engine_in=Engine(filename='GENX.cfg', ideal_cycle=False))
     # print(obj.turbine_power/obj.turbine_power2)
     # print(obj.engine_in.ambient.p_total)
     # print(obj.heat_power/obj.chemical_power)
@@ -183,7 +183,8 @@ if __name__ == '__main__':
     print('Bypass Power: {} [W]'.format(obj.bypass_power))
     print('Gas Power: {} [W]'.format(obj.gas_power))
     print('Turbine Power: {} [W]'.format(obj.turbine_power))
-    print('Thermal Efficiency: {}'.format(obj.gas_power/obj.heat_power))
+    print('Thermodynamic (Gas Power) Efficiency: {}'.format(obj.gas_power/obj.heat_power))
+    print('Thermal Efficiency: {}'.format(obj.jet_power/obj.chemical_power))
     print('Carnot Efficiency: {}'.format(obj.eta_carnot))
     print('Ideal Thermal Efficiency: {}'.format(obj.eta_ideal))
     print('Overall Pressure Ratio: {}'.format(obj.engine_in.pr_ovr))
