@@ -14,3 +14,5 @@ Assignment for the TU Delft Master Course: AE4238 Aero Engine Technology
 
 ## TODO
 Make table of governing relations between stages w/ assumptions
+
+[![Requires.io](https://img.shields.io/requires/github/celery/celery.svg)](https://www.python.org/downloads/release/python-2715/)
