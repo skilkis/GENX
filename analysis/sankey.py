@@ -6,6 +6,8 @@
 from components import Turbine
 from collections import namedtuple
 from utils import Attribute
+from directories import DIRS
+import os
 
 __author__ = 'San Kilkis'
 
@@ -58,15 +60,6 @@ class SankeyDiagram(object):
         return nb.inflow.mass_flow * nb.inflow.specific_heat * (fan.outflow.t_total - fan.inflow.t_total)
 
     @Attribute
-    def core_power(self):
-        """ Obtains the power output of the cold nozzle in SI Watt [W]
-
-        :rtype: float
-        """
-        nc = self.engine_in.nozzle_core  # Localizing the core nozzle for readability
-        return nc.inflow.mass_flow * nc.inflow.specific_heat * (nc.inflow.t_total - nc.outflow.t_static)
-
-    @Attribute
     def temperature_g(self):
         """ Calculates the total temperature that would theoretically be achieved if the LPT would not be driving
         a fan which is exerting power into a bypassed section in SI Kelvin [K]
@@ -84,11 +77,32 @@ class SankeyDiagram(object):
 
         :rtype: float
         """
-        lpt = self.engine_in.lpt
-        t_4 = self.engine_in.combustor.outflow.t_total
-        p_4 = self.engine_in.combustor.outflow.p_total
-        return p_4 * (1 - (1/self.engine_in.eta_lpt) *
-                      (1 - (lpt.outflow.t_total / t_4))) ** (lpt.inflow.kappa_gas / (lpt.inflow.kappa_gas - 1.))
+        hpt = self.engine_in.hpt
+        t_45 = hpt.outflow.t_total
+        p_45 = hpt.outflow.p_total
+        return p_45 * ((1 - (1/self.engine_in.eta_hpt) *
+                       (1 - (self.temperature_g / t_45))) ** (hpt.inflow.kappa_gas / (hpt.inflow.kappa_gas - 1.)))
+
+    @Attribute
+    def gas_power(self):
+        """ Computes the theoretical power remaining in the core flow after work extraction by the Turbines in
+        SI Watt [W]. In reality, this is done to be able to compare the efficiencies of a bypassed engine with that of
+        a regular turbojet. In the latter case the turbine(s) exert work only on the core flow, thus the remaining
+        power in the core flow is simply that which is not extracted by the turbine. However, in the turbofan, part of
+        the work extracted by the turbine is used for the bypassed air, thus without utilizing this theoretical value,
+        the bypassed engine would already be at a disadvantage in Thermodynamic efficiency since it would seem that
+        the work
+
+        :rtype: float
+        """
+        eng = self.engine_in
+        m_dot, cp_g, = eng.combustor.outflow.mass_flow, eng.combustor.outflow.specific_heat
+        kappa_gas = eng.combustor.outflow.kappa_gas
+        t_total_g = self.temperature_g
+        p_g = self.pressure_g
+        p_0 = self.engine_in.ambient.p_total
+
+        return m_dot * cp_g * t_total_g * (1. - (p_0 / p_g)**((kappa_gas - 1.)/kappa_gas)) - (0.5 * self.engine_in.bypass.mass_flow_core * self.engine_in.ambient.velocity ** 2)
 
     # TODO make this more general
     @Attribute
@@ -118,16 +132,17 @@ class SankeyDiagram(object):
                 nb.throat_area * (nb.outflow.p_static - p_s) * nb.outflow.velocity)
 
     @Attribute
-    def jet_power(self):
-        """ Propulsive jet power in SI Watt [W]
+    def prop_power(self):
+        """ Propulsive power in SI Watt [W]. This quantity represents the increase in kinetic power of the air/gas.
+        P_prop is the symbol in the reader.
 
         :rtype: float
         """
         return self.momentum_power + self.pressure_power
 
     @Attribute
-    def jet_power_effective(self):
-        """ Propulsive jet power calculated with the effective velocity in SI Watt [W]
+    def prop_power_effective(self):
+        """ Propulsive power calculated with the effective velocity in SI Watt [W]
 
         :rtype: float
         """
@@ -146,24 +161,56 @@ class SankeyDiagram(object):
         return self.engine_in.thrust * self.engine_in.ambient.velocity
 
     @Attribute
-    def gas_power(self):
-        eng = self.engine_in
-        m_dot = eng.combustor.outflow.mass_flow
-        cp_g = eng.combustor.outflow.specific_heat
-        t_total_g = eng.lpt.outflow.t_total
-        p_g = self.pressure_g
-        p_0 = self.engine_in.ambient.p_total
-
-        return m_dot * cp_g * t_total_g * (1. - (p_0 / p_g)**((cp_g - 1.)/cp_g)) - (0.5 * self.engine_in.bypass.mass_flow_core * self.engine_in.ambient.velocity ** 2)
-
-    @Attribute
-    def eta_prop(self):
-        """ Combined propulsive efficiency of all nozzles present in the engine. This represents the efficiency
-        between the useful work output (thrust) and the total work output of the nozzle which is the jet power.
+    def eta_comb(self):
+        """ Calculates the combustion efficiency of the engine.
 
         :rtype: float
         """
-        return self.thrust_power / self.jet_power
+        return self.heat_power / self.chemical_power
+
+    @Attribute
+    def eta_thdy(self):
+        """ Calculates the thermodynamic efficiency of the engine. This represents the ratio between the total potential
+        power that can be transformed into useful work and the power available after the combustion process.
+
+        :rtype: float
+        """
+        return self.gas_power / self.heat_power
+
+    @Attribute
+    def eta_thm(self):
+        """ Calculates the thermal energy of the cycle which relates the propulsive power
+
+        :rtype: float
+        """
+        return self.prop_power / self.chemical_power
+
+    @Attribute
+    def eta_jet(self):
+        """ Calculates the jet generation efficiency (pg. 77 of Reader).
+
+
+        :rtype: float
+        """
+        return self.prop_power / self.gas_power
+
+    @Attribute
+    def eta_prop(self):
+        """ Calculates the propulsive efficiency (Froude Efficiency) which relates the power in the flow that has been
+        transformed into useful work to the total chemical power in the kerosene.
+
+        :rtype: float
+        """
+        return self.thrust_power / self.prop_power
+
+    @Attribute
+    def eta_total(self):
+        """ Calculates the total efficiency of the cycle which relates the useful work that has been done to the flow to
+        achieve thrust to the total chemical power in the kerosene.
+
+        :rtype: float
+        """
+        return self.thrust_power / self.chemical_power
 
     @Attribute
     def eta_ideal(self):
@@ -176,49 +223,90 @@ class SankeyDiagram(object):
 
     @Attribute
     def eta_carnot(self):
-        """ Carnot Cycle Thermal Efficiency (max. possible efficiency) calculated from the ratio between the ambient
-        total temperature and the combustion chamber exit total temperature.
+        """ Carnot Cycle Thermal Efficiency (max. possible efficiency, pg. 24 of reader) calculated from the ratio
+        between the ambient total temperature and the combustion chamber exit total temperature.
 
         :rtype: float
         """
         return 1 - (self.engine_in.inlet.outflow.t_total / self.engine_in.combustor.outflow.t_total)
 
-    # @Attribute
-    # def gas_power(self):
-    #     eng = self.engine_in
-    #     m_dot = eng.combustor.outflow.mass_flow
-    #     cp_g = eng.combustor.outflow.specific_heat
-    #     cp_a = self.engine_in.nozzle_bypass.inflow.specific_heat
-    #     t_total_g = eng.lpt.outflow.t_total
-    #     p_g = self.engine_in.lpt.outflow.p_total
-    #     p_a = self.engine_in.nozzle_bypass.inflow.p_total
-    #     p_0 = self.engine_in.ambient.p_total
-    #
-    #     return self.engine_in.bypass.mass_flow_bypass * cp_a * self.engine_in.nozzle_bypass.inflow.t_total * (1. - (p_0 / p_a)**((cp_a - 1.)/cp_a)) + m_dot * cp_g * t_total_g * (1. - (p_0 / p_g)**((cp_g - 1.)/cp_g)) - (0.5 * self.engine_in.ambient.mass_flow * self.engine_in.ambient.velocity ** 2)
-
     def plot(self):
         return NotImplementedError('Plotting of the Sankey Diagram is not yet implemented, this is planned for a'
                                    'future release')
+
+    @Attribute
+    def sankey_powers(self):
+        """ Creates a dictionary of powers used for creating the Sankey Diagram, these can be viewed on
+        S18 of Lecture 2. All values are in SI Mega Watt [MW] for readability.
+
+        :rtype: dict
+        """
+        return {'chemical_power':  self.chemical_power / 1e6,
+                'heat_power': self.heat_power / 1e6,
+                'gas_power': self.gas_power / 1e6,
+                'prop_power': self.prop_power / 1e6,
+                'thrust_power': self.thrust_power / 1e6}
+
+    @Attribute
+    def sankey_etas(self):
+        """ Creates a dictionary of power remaining ratios (loosely an efficiency as compared to the total chemical
+        power) used for creating the Sankey Diagram, these can be viewed on S18 of Lecture 2
+
+        :rtype: dict
+        """
+        eta_dict = {}
+        for key, value in self.sankey_powers.items():
+            eta_dict[key.split('_')[0] + '_eta'] = value / (self.chemical_power / 1e6)
+        return eta_dict
+
+    @Attribute
+    def sankey_losses(self):
+        """ Creates a dictionary of loss ratios used for creating the Sankey Diagram, these can be viewed on
+        S18 of Lecture 2
+
+        :rtype: dict
+        """
+        return {'incomplete_combustion':  (self.chemical_power - self.heat_power) / self.chemical_power,
+                'heat': (self.heat_power - self.gas_power) / self.chemical_power,
+                'heat_jet': (self.gas_power - self.prop_power_effective) / self.chemical_power,
+                'kinetic_energy': (self.prop_power_effective - self.thrust_power) / self.chemical_power}
+
+    def write_csv(self):
+        """ Writes an output .csv file containing relevant parameters to create the Sankey Diagram """
+        # Second pass writes ordered .csv file
+        engine_name = self.engine_in.__name__
+        filename = '{}_sankey_{}.csv'.format(engine_name, 'ideal' if self.engine_in.ideal_cycle else 'real')
+        with open(os.path.join(DIRS['CSV_DIR'], filename), "w") as csv:
+            csv.write('<<< Powers >>>\n')
+            for key, value in self.sankey_powers.items():
+                csv.write('{}\t{}\n'.format(key, value))
+
+            csv.write('\n<<< Efficiencies >>>\n')
+            for key, value in self.sankey_etas.items():
+                csv.write('{}\t{}\n'.format(key, value))
+
+            csv.write('\n<<< Losses >>>\n')
+            for key, value in self.sankey_losses.items():
+                csv.write('{}\t{}\n'.format(key, value))
 
 
 if __name__ == '__main__':
     from engine import Engine
     obj = SankeyDiagram(engine_in=Engine(filename='GENX.cfg', ideal_cycle=False))
+    print('Gas Generator Temperature: {} [K]'.format(obj.temperature_g))
     print('Total Pressure Gas Generator: {} [Pa]'.format(obj.pressure_g))
+    print('Chemical Power: {} [W]'.format(obj.chemical_power))
+    print('Heat Power: {} [W]'.format(obj.heat_power))
     print('Bypass Power: {} [W]'.format(obj.bypass_power))
     print('Gas Power: {} [W]'.format(obj.gas_power))
-    print('Turbine Power: {} [W]'.format(obj.turbine_power))
-    print('Thermodynamic (Gas Power) Efficiency: {}'.format(obj.gas_power/obj.heat_power))
-    print('Jet Power: {} [W]'.format(obj.jet_power))
-    print('Thermal Efficiency: {}'.format(obj.jet_power/obj.chemical_power))
-    print('Carnot Efficiency: {}'.format(obj.eta_carnot))
+    print('Jet Power: {} [W]'.format(obj.prop_power))
+    print('Thrust Power: {} [W]'.format(obj.thrust_power))
+    print('Thermodynamic (Gas Power) Efficiency: {}'.format(obj.eta_thdy))
+    print('Thermal Efficiency: {}'.format(obj.eta_thm))
     print('Ideal Thermal Efficiency: {}'.format(obj.eta_ideal))
-    print('Overall Pressure Ratio: {}'.format(obj.engine_in.pr_ovr))
-    print('Jet Propulsive Efficiency: {}'.format(obj.jet_power / obj.gas_power))
+    print('Jet Propulsive Efficiency: {}'.format(obj.eta_jet))
     print('Propulsive Efficiency: {}'.format(obj.eta_prop))
-    print('Total Efficiency: {}'.format(obj.thrust_power / obj.chemical_power))
-    print('Gas Generator Temperature: {} [K]'.format(obj.temperature_g))
+    print('Total Efficiency: {}'.format(obj.eta_total))
+    print('Carnot Efficiency: {}'.format(obj.eta_carnot))
 
-    # DIFFERENCE IN P_GG vs IDEAL P_GG IS DUE TO CHOKING, GAS POWER BEFORE NOZZLE IS ALTERED BY CHOKING CONDITION,
-    # CANNOT USE STATIC PRESSURE TO GAIN UNDERSTANDING INTO THE FLOW PROPERTIES BEFORE THE CHOKE (INFORMATION IS
-    # ONLY 1 WAY)
+    obj.write_csv()
