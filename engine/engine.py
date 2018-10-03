@@ -263,7 +263,7 @@ class Engine(SpecParser):
 
 
 if __name__ == '__main__':
-    obj = Engine(ideal_cycle=False)
+    obj = Engine(ideal_cycle=True)
     print(obj.design_range)
     print(obj.sfc)
     print(obj.thrust)
