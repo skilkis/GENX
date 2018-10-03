@@ -13,7 +13,7 @@ thrust_eta	0.384230488412
 heat_eta	1.0
 
 <<< Losses >>>
-kinetic_energy	0.29401247235
+kinetic_energy	0.239474128905
 heat	0.329242993404
-heat_jet	-0.00748595416556
+heat_jet	0.0470523892795
 incomplete_combustion	0.0
