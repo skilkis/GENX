@@ -13,8 +13,10 @@ import os
 
 __author__ = 'San Kilkis'
 
-
+# TODO fix problem w/ ideal cycle
 # TODO Implement __new__ method to Constants to make sure that it is only instantiated once
+# TODO problem lies with improper definition of self.get_eta_keys()
+
 
 class Engine(SpecParser):
 
@@ -192,12 +194,13 @@ class Engine(SpecParser):
         analysis.plot_param()
         analysis.plot_eta()
 
+    # TODO make this method more stable, right now access to super-class is not dynamic
     def get_eta_keys(self):
         """ Provides a list of all efficiency keys by accessing the superclass :py:class:`SpecParser` dictionary
 
         :rtype: list[str]
         """
-        return [key for key in vars(super(self.__class__, self)).keys() if 'eta' in key]
+        return [key for key in vars(self.__class__.__bases__[0]).keys() if 'eta' in key]
 
     def write_csv(self, station_list=('2', '21', '13', '18', '25', '3', '4', '45', '5', '7', '8'),
                   static_list=('8', '18')):
@@ -263,13 +266,12 @@ class Engine(SpecParser):
 
 
 if __name__ == '__main__':
+    from specparser import SpecParser
     obj = Engine(ideal_cycle=True)
+
     print(obj.design_range)
     print(obj.sfc)
     print(obj.thrust)
     print(obj.combustor.fuel_flow)
     obj.calculate_cycle()
     obj.write_csv()
-    # obj.calculate_cycle()
-    # obj.analyze_sensitivity()
-    # obj.write_csv()

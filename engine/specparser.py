@@ -148,5 +148,6 @@ class SpecParser(object):
 
 
 if __name__ == '__main__':
-    obj = SpecParser()
-    print(obj.eta_inlet)
+    print(vars(SpecParser).keys())
+    # obj = SpecParser()
+    # print(obj.eta_inlet)

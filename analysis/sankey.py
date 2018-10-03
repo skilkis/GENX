@@ -33,6 +33,10 @@ class SankeyDiagram(object):
 
     @Attribute
     def heat_power(self):
+        """ Obtains the actual power output of the comustion chamber in SI Watt [W}
+
+        :rtype: float
+        """
         cc = self.engine_in.combustor  # Localizing combustion chamber for clarity
         return cc.inflow.mass_flow * cc.outflow.specific_heat * (cc.outflow.t_total - cc.inflow.t_total)
 
@@ -46,12 +50,12 @@ class SankeyDiagram(object):
 
     @Attribute
     def bypass_power(self):
-        """ Obtains the power output of the bypass nozzle in SI Watt [W]
+        """ Obtains the power output of the bypass fan to the bypassed air flow in SI Watt [W]
 
         :rtype: float
         """
-        nb = self.engine_in.nozzle_bypass  # Localizing the bypass nozzle for readability
-        return nb.inflow.mass_flow * nb.inflow.specific_heat * (nb.inflow.t_total - nb.outflow.t_static)
+        fan, nb = self.engine_in.fan, self.engine_in.nozzle_bypass  # Localizing variables for readability
+        return nb.inflow.mass_flow * nb.inflow.specific_heat * (fan.outflow.t_total - fan.inflow.t_total)
 
     @Attribute
     def core_power(self):
@@ -59,20 +63,27 @@ class SankeyDiagram(object):
 
         :rtype: float
         """
-        nc = self.engine_in.nozzle_core  # Localizing the bypass nozzle for readability
+        nc = self.engine_in.nozzle_core  # Localizing the core nozzle for readability
         return nc.inflow.mass_flow * nc.inflow.specific_heat * (nc.inflow.t_total - nc.outflow.t_static)
 
     @Attribute
     def temperature_g(self):
-        """ """
-        cc = self.engine_in.combustor
-        t_4, m_c, cp_g = cc.outflow.t_total, cc.outflow.mass_flow, cc.outflow.specific_heat
-        fan_bypass_work = self.engine_in.nozzle_bypass.inflow.mass_flow * self.engine_in.nozzle_bypass.inflow.specific_heat * (self.engine_in.fan.outflow.t_total - self.engine_in.fan.inflow.t_total)
-        print(fan_bypass_work)
-        return t_4 - ((self.turbine_power - fan_bypass_work) / (m_c * cp_g))
+        """ Calculates the total temperature that would theoretically be achieved if the LPT would not be driving
+        a fan which is exerting power into a bypassed section in SI Kelvin [K]
+
+        :rtype: float
+        """
+        cc, hpt = self.engine_in.combustor, self.engine_in.hpt
+        t_45, m_c, cp_g = hpt.outflow.t_total, cc.outflow.mass_flow, cc.outflow.specific_heat
+        return t_45 - ((self.engine_in.lpt.work_output - self.bypass_power) / (m_c * cp_g))
 
     @Attribute
     def pressure_g(self):
+        """ Calculates the corresponding total pressure in SI Pascal [Pa] at the theoretical condition where the LPT
+        would only serve to drive a booster + fan combination that only compresses core air flow
+
+        :rtype: float
+        """
         lpt = self.engine_in.lpt
         t_4 = self.engine_in.combustor.outflow.t_total
         p_4 = self.engine_in.combustor.outflow.p_total
@@ -113,18 +124,17 @@ class SankeyDiagram(object):
         :rtype: float
         """
         return self.momentum_power + self.pressure_power
-    #
-    # @Attribute
-    # def jet_power(self):
-    #     """ Propulsive jet power in SI Watt [W]
-    #
-    #     :rtype: float
-    #     """
-    #     v_c, v_b, v_0 = self.equivalent_velocity.core, self.equivalent_velocity.bypass, self.engine_in.ambient.velocity
-    #     nc, nb, = self.engine_in.nozzle_core, self.engine_in.nozzle_bypass
-    #
-    #     # return 0.5 * (nc.outflow.mass_flow * (v_c ** 2 - v_0 ** 2) + nb.outflow.mass_flow * (v_b ** 2 - v_0 ** 2))
-    #     return 0.5 * (nc.outflow.mass_flow * (v_c ** 2 - v_0 ** 2) + nb.outflow.mass_flow * (v_b ** 2 - v_0 ** 2))
+
+    @Attribute
+    def jet_power_effective(self):
+        """ Propulsive jet power calculated with the effective velocity in SI Watt [W]
+
+        :rtype: float
+        """
+        v_c, v_b, v_0 = self.equivalent_velocity.core, self.equivalent_velocity.bypass, self.engine_in.ambient.velocity
+        nc, nb, = self.engine_in.nozzle_core, self.engine_in.nozzle_bypass
+
+        return 0.5 * (nc.outflow.mass_flow * (v_c ** 2 - v_0 ** 2) + nb.outflow.mass_flow * (v_b ** 2 - v_0 ** 2))
 
     @Attribute
     def thrust_power(self):
@@ -134,19 +144,6 @@ class SankeyDiagram(object):
         :rtype: float
         """
         return self.engine_in.thrust * self.engine_in.ambient.velocity
-
-    @Attribute
-    def thrust_power_2(self):
-        return (self.engine_in.nozzle_core.outflow.mass_flow * (self.equivalent_velocity.core - self.engine_in.ambient.velocity) + \
-               self.engine_in.nozzle_bypass.outflow.mass_flow * (
-                           self.equivalent_velocity.bypass - self.engine_in.ambient.velocity)) * self.engine_in.ambient.velocity
-
-
-
-    # @Attribute
-    # def pressure_g(self):
-    #     hpt = self.engine_in.hpt
-    #     return hpt.inflow.p_total * ((hpt.outflow.t_total/hpt.inflow.t_total) ** (hpt.inflow.specific_heat/ (self.engine_in.eta_cc * (hpt.inflow.specific_heat - 1.))))
 
     @Attribute
     def gas_power(self):
@@ -206,13 +203,7 @@ class SankeyDiagram(object):
 
 if __name__ == '__main__':
     from engine import Engine
-    obj = SankeyDiagram(engine_in=Engine(filename='GENX.cfg', ideal_cycle=True))
-    # print(obj.turbine_power/obj.turbine_power2)
-    # print(obj.engine_in.ambient.p_total)
-    # print(obj.heat_power/obj.chemical_power)
-    # print(obj.engine_in.ambient.mass_flow)
-    print(obj.pressure_g/obj.engine_in.lpt.outflow.p_total)
-    # # print(obj.turbine_power)
+    obj = SankeyDiagram(engine_in=Engine(filename='GENX.cfg', ideal_cycle=False))
     print('Total Pressure Gas Generator: {} [Pa]'.format(obj.pressure_g))
     print('Bypass Power: {} [W]'.format(obj.bypass_power))
     print('Gas Power: {} [W]'.format(obj.gas_power))
@@ -226,13 +217,7 @@ if __name__ == '__main__':
     print('Jet Propulsive Efficiency: {}'.format(obj.jet_power / obj.gas_power))
     print('Propulsive Efficiency: {}'.format(obj.eta_prop))
     print('Total Efficiency: {}'.format(obj.thrust_power / obj.chemical_power))
-    # print(obj.bypass_power + obj.gas_power)
     print('Gas Generator Temperature: {} [K]'.format(obj.temperature_g))
-    # print(obj.engine_in.lpt.outflow.t_total)
-    # print(obj.engine_in.lpt.outflow.station_number)
-    # obj.engine_in.calculate_cycle()
-    # print(obj.gas_power)
-    print(obj.thrust_power, obj.thrust_power_2)
 
     # DIFFERENCE IN P_GG vs IDEAL P_GG IS DUE TO CHOKING, GAS POWER BEFORE NOZZLE IS ALTERED BY CHOKING CONDITION,
     # CANNOT USE STATIC PRESSURE TO GAIN UNDERSTANDING INTO THE FLOW PROPERTIES BEFORE THE CHOKE (INFORMATION IS

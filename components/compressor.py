@@ -29,9 +29,8 @@ class Compressor(Stage):
     @property
     def t_total(self):
         """ Total temperature is not constant across the fan """
-        return self.inflow.t_total * (1 + (1/self.eta) *
-                                      (((self.p_total / self.inflow.p_total)**((self.inflow.kappa - 1)
-                                                                               / self.inflow.kappa)) - 1))
+        return self.inflow.t_total * (1 + (self.pressure_ratio**((self.inflow.kappa - 1) /
+                                                                 self.inflow.kappa) - 1) / self.eta)
 
     @property
     def t_isentropic(self):
