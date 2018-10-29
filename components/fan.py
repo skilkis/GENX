@@ -16,6 +16,14 @@ class Fan(Compressor):
     """ A fan is more or less a compressor thus the total temperature and pressure attributes are from
     :py:class:`Compressor`"""
 
+    # @property
+    # def outflow(self):
+    #     return FlowCondition(mass_flow=self.inflow.mass_flow,
+    #                          t_total=self.t_isentropic if self.isentropic else self.t_total,
+    #                          p_total=self.p_total,
+    #                          medium='air',
+    #                          station_number='21')
+
     @property
     def outflow(self):
         return FlowCondition(mass_flow=self.inflow.mass_flow,

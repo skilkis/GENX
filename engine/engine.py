@@ -13,6 +13,10 @@ import os
 
 __author__ = 'San Kilkis'
 
+# TODO fix problem w/ ideal cycle
+# TODO Implement __new__ method to Constants to make sure that it is only instantiated once
+# TODO problem lies with improper definition of self.get_eta_keys()
+
 
 class Engine(SpecParser):
 
@@ -190,19 +194,25 @@ class Engine(SpecParser):
         analysis.plot_param()
         analysis.plot_eta()
 
+    # TODO make this method more stable, right now access to super-class is not dynamic
     def get_eta_keys(self):
         """ Provides a list of all efficiency keys by accessing the superclass :py:class:`SpecParser` dictionary
 
         :rtype: list[str]
         """
-        return [key for key in vars(super(self.__class__, self)).keys() if 'eta' in key]
+        return [key for key in vars(self.__class__.__bases__[0]).keys() if 'eta' in key]
 
-    def write_csv(self):
+    def write_csv(self, station_list=('2', '21', '13', '18', '25', '3', '4', '45', '5', '7', '8'),
+                  static_list=('8', '18')):
+        """ Writes an output .csv file containing relevant parameters at each selected station.
+
+        :param list station_list: Stations at which output values are desired
+        :param list static_list: Stations at which static pressure is desired
+        :return:
+        """
         components = self.get_components(output='keys')
-        station_list = ['2', '21', '13', '18', '25', '3', '4', '45', '5', '7', '8']
-        static_list = ['8', '18']  # List of stations where the static pressure is desired
         station_dict = {}
-        still_to_find = station_list[:]  # Copying list object w/ slice operation
+        still_to_find = list(station_list) if type(station_list) == tuple else station_list[:]  # Copying w/ slice
 
         # First pass retrieves un-ordered keys
         def get_values(flow_condition, args):
@@ -237,6 +247,17 @@ class Engine(SpecParser):
                 station, p, t, m_dot = station_dict[key]
                 csv.write('{}, {}, {}, {}\n'.format(station, p, t, m_dot))
 
+    def get_children(self, component_type=Component):
+        """ Fetches all :py:class:`Component` of the current :py:class:`Engine`. Optional argument `component_type`
+        specifies the ``type`` of component to collect.
+
+        :param type[Component] component_type: (Optional) Specifies the type of component to retrieve
+
+        """
+        components = self.get_components(output='key')
+        objects = [getattr(self, component) for component in components]
+        return [o for o in objects if isinstance(o, component_type)]
+
     @classmethod
     def get_components(cls, output='value'):
         """ Gets all default values for the :py:class:`Component` or the associated keys """
@@ -245,10 +266,12 @@ class Engine(SpecParser):
 
 
 if __name__ == '__main__':
-    obj = Engine(ideal_cycle=False)
+    from specparser import SpecParser
+    obj = Engine(ideal_cycle=True)
+
     print(obj.design_range)
     print(obj.sfc)
     print(obj.thrust)
+    print(obj.combustor.fuel_flow)
     obj.calculate_cycle()
-    obj.analyze_sensitivity()
     obj.write_csv()

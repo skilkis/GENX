@@ -7,5 +7,12 @@ Assignment for the TU Delft Master Course: AE4238 Aero Engine Technology
 3. The intermediate values in a process can be approximated by an exponential function
 4. The flow through both nozzles is always choked
 
-## Ideas
+## Usage
+1. Create config file for desired engine in accordance with the examples in `engine/data`
+2. import the `Engine` class from ``engine.py`` and instantiate object w/ syntax: `Engine(filename='myengine.cfg')`
+3. Enjoy
+
+## TODO
 Make table of governing relations between stages w/ assumptions
+
+[![Requires.io](https://img.shields.io/badge/python-%3E%3D2.7-brightgreen.svg)](https://www.python.org/downloads/release/python-2715/)

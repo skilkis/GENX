@@ -268,7 +268,7 @@ class BraytonCycle(object):
                  markersize=2.0)  # End
         return s_inflow + delta_s, t_outflow
 
-    def plot(self):
+    def plot(self, save=False):
         """ Generates a plot of the T-s diagram (Temperature vs. Specific entropy) """
         fig = plt.figure('{}Cycle'.format('Ideal' if self.engine_in.ideal_cycle else ''))
         plt.style.use('tudelft')
@@ -317,9 +317,11 @@ class BraytonCycle(object):
                                                 'Ideal' if self.engine_in.ideal_cycle else 'Real'))
         plt.axis((s_min, s_max, t_min, t_max))
         plt.show()
-        fig.savefig(os.path.join(DIRS['FIGURE_DIR'],
-                                 '{}_{}_cycle'.format(self.engine_in.__name__,
-                                                      'ideal' if self.engine_in.ideal_cycle else 'real')))
+
+        if save:
+            fig.savefig(os.path.join(DIRS['FIGURE_DIR'],
+                                     '{}_{}_cycle'.format(self.engine_in.__name__,
+                                                          'ideal' if self.engine_in.ideal_cycle else 'real')))
 
 
 if __name__ == '__main__':

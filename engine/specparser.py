@@ -97,6 +97,11 @@ class SpecParser(object):
         return float(self.reader['pr_hpc'])
 
     @Attribute
+    def pr_ovr(self):
+        """ Overall Pressure Ratio (Fan + All Compressors) """
+        return float(self.reader['pr_ovr']) or self.pr_fan * self.pr_lpc * self.pr_hpc
+
+    @Attribute
     def eta_fan(self):
         """ Fan Isentropic Efficiency """
         return float(self.reader['eta_fan'])
@@ -143,5 +148,6 @@ class SpecParser(object):
 
 
 if __name__ == '__main__':
-    obj = SpecParser()
-    print(obj.eta_inlet)
+    print(vars(SpecParser).keys())
+    # obj = SpecParser()
+    # print(obj.eta_inlet)

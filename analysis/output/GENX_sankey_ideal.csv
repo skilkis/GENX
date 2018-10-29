@@ -1,0 +1,19 @@
+<<< Powers >>>
+gas_power	35.0538804901
+heat_power	52.2601778965
+prop_power	32.5949142559
+chemical_power	52.2601778965
+thrust_power	20.0799536777
+
+<<< Efficiencies >>>
+gas_eta	0.670757006596
+prop_eta	0.623704617317
+chemical_eta	1.0
+thrust_eta	0.384230488412
+heat_eta	1.0
+
+<<< Losses >>>
+kinetic_energy	0.239474128905
+heat	0.329242993404
+heat_jet	0.0470523892795
+incomplete_combustion	0.0
