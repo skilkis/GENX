@@ -6,3 +6,9 @@
 
 # Simulink Cache Files
 controller/slprj
+
+# Python Compiled Binaries
+*.pyc
+
+# MATLAB Autosave Files
+*.asv
