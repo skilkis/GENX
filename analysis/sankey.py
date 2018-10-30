@@ -91,7 +91,7 @@ class SankeyDiagram(object):
         power in the core flow is simply that which is not extracted by the turbine. However, in the turbofan, part of
         the work extracted by the turbine is used for the bypassed air, thus without utilizing this theoretical value,
         the bypassed engine would already be at a disadvantage in Thermodynamic efficiency since it would seem that
-        the work
+        the work going to drive the fan
 
         :rtype: float
         """
@@ -102,7 +102,9 @@ class SankeyDiagram(object):
         p_g = self.pressure_g
         p_0 = self.engine_in.ambient.p_total
 
-        return m_dot * cp_g * t_total_g * (1. - (p_0 / p_g)**((kappa_gas - 1.)/kappa_gas)) - (0.5 * self.engine_in.bypass.mass_flow_core * self.engine_in.ambient.velocity ** 2)
+        return m_dot * cp_g * t_total_g * (1. - (p_0 / p_g)**((kappa_gas - 1.)/kappa_gas)
+                                           ) - (0.5 * self.engine_in.bypass.mass_flow_core *
+                                                self.engine_in.ambient.velocity ** 2)
 
     # TODO make this more general
     @Attribute
@@ -219,8 +221,8 @@ class SankeyDiagram(object):
 
         :return:
         """
-        return 1. - (1. / (self.engine_in.pr_ovr ** ((self.engine_in.ambient.kappa_air - 1.) /
-                                                     self.engine_in.ambient.kappa_air)))
+        return 1. - (self.engine_in.pr_ovr ** ((1 - self.engine_in.ambient.kappa_air ) /
+                                                     self.engine_in.ambient.kappa_air))
 
     @Attribute
     def eta_carnot(self):
@@ -302,13 +304,14 @@ if __name__ == '__main__':
     print('Gas Power: {} [W]'.format(obj.gas_power))
     print('Jet Power: {} [W]'.format(obj.prop_power))
     print('Thrust Power: {} [W]'.format(obj.thrust_power))
+    print('Combustion Efficiency: {}'.format(obj.eta_comb))
     print('Thermodynamic (Gas Power) Efficiency: {}'.format(obj.eta_thdy))
     print('Thermal Efficiency: {}'.format(obj.eta_thm))
-    print('Ideal Thermal Efficiency: {}'.format(obj.eta_ideal))
     print('Jet Propulsive Efficiency: {}'.format(obj.eta_jet))
     print('Propulsive Efficiency: {}'.format(obj.eta_prop))
     print('Total Efficiency: {}'.format(obj.eta_total))
+    print('Ideal Thermal Efficiency: {}'.format(obj.eta_ideal))
     print('Carnot Efficiency: {}'.format(obj.eta_carnot))
-
-    obj.write_csv()
-    print(obj.prop_power, obj.prop_power_effective)
+    # print('Total Efficiency: {}'.format(obj.eta_comb * obj.eta_thdy * obj.eta_jet * obj.eta_prop)) # Double Check!
+    # obj.engine_in.calculate_cycle()
+    # obj.write_csv()

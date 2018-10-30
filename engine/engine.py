@@ -267,11 +267,11 @@ class Engine(SpecParser):
 
 if __name__ == '__main__':
     from specparser import SpecParser
-    obj = Engine(ideal_cycle=True)
+    obj = Engine(ideal_cycle=False)
 
     print(obj.design_range)
     print(obj.sfc)
     print(obj.thrust)
     print(obj.combustor.fuel_flow)
-    obj.calculate_cycle()
+    # obj.calculate_cycle()
     obj.write_csv()
