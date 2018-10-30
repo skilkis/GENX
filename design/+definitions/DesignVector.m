@@ -3,13 +3,18 @@ classdef DesignVector < dynamicprops
     %   Solves the hassle of having to remember indices w/ fmincon
 
     properties
-        x0                  % Initial Values of the Design Vector
-        x                   % Current Values of the Design Vector
+        init                % Initial Values of the Design Vector
+        data                % Current Values of the Design Vector
     end
     
     properties (SetAccess = private, GetAccess = private)
         keys                % Design Vector Keys
         cell                % Input cell containing key, value pairs
+    end
+    
+    properties (SetAccess = private)
+        lb                  % Lower Bounds of Design Variable
+        ub                  % Upper Bound of Design Variable
     end
     
     methods
@@ -23,13 +28,15 @@ classdef DesignVector < dynamicprops
             
             obj.cell = cell;
 
-            obj.x0 = cell2mat(cell(:,2)); obj.x = obj.x0;
+            obj.init = cell2mat(cell(:,2)); obj.data = obj.init;
             obj.keys = cell(:,1);
+            obj.lb = cell2mat(cell(:,3));
+            obj.ub = cell2mat(cell(:,4));
             
             index = 1;
             for key = obj.keys'
                 P = addprop(obj, key{:});
-                P.GetMethod = @(getter) obj.x(index);
+                P.GetMethod = @(getter) obj.data(index);
                 index = index + 1;
             end
         end

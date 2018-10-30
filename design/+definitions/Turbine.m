@@ -10,7 +10,6 @@ classdef Turbine < definitions.Constants
         N                       % Number of Stages [-]
         RPM                     % Revolutions Per Minute [rev/min]
         PI                      % Expansion Ratio [-]
-        A = 1.5                 % Aspect Ratio H/l [-]
     end
 
     properties (SetAccess = private)
@@ -25,6 +24,7 @@ classdef Turbine < definitions.Constants
         omega                   % Angular Velocity at Mean Radius [rad/s]
         outflow                 % Outflow state variables
         w                       % Specific Work per Stage
+        area                    % Total Cross-Sectional Area
     end
     
     methods
@@ -43,7 +43,7 @@ classdef Turbine < definitions.Constants
             exclude = fieldnames(definitions.Constants)';
             exclude = [exclude, 'inflow', 'outflow', 'omega', 'eta_p',...
                        'w', 'stages', 'converged', 'stages_complete',...
-                       'mach_known', 'A'];
+                       'mach_known', 'area'];
             for prop = fieldnames(obj)'
                 if ~any(strcmp(exclude, prop{:}))
                     addRequired(args, prop{:})
@@ -108,6 +108,47 @@ classdef Turbine < definitions.Constants
         function f = plotVelocityDiagram(obj)
             f = obj.stages{1,1}.plotVelocityDiagram();
         end
+        
+        function f = plotFlowPath(obj)
+            f = figure('Name', 'FlowPath');
+            grid on; grid minor; hold on;
+            ref = 0;
+            for stage=obj.stages'
+                stg = stage{1,1};
+                geom = stg.geometry;
+                x = geom.nozzle.x + ref;
+                y = geom.nozzle.y;
+                plot(x,y, 'Color', 'red', 'Marker', 'o')
+
+                x = geom.rotor.x + ref;
+                y = geom.rotor.y;
+                plot(x,y, 'Color', 'blue', 'Marker', 'o');
+
+                ref = ref + geom.rotor.spacing + geom.nozzle.spacing + geom.nozzle.L + geom.rotor.L;
+            end
+
+            pad_x = 0.05*(max(x));
+            pad_y = 0.05*(max(y) - min(y));
+            r_m = stg.r_m;
+
+            axis([-pad_x, max(x)+pad_x,...
+                (r_m-0.5*max(y))-pad_y, (r_m + 0.5*max(y))+pad_y])
+            x_lim = get(gca,'XLim');  %# Get the range of the x axis
+            line(x_lim, [r_m, r_m], 'LineStyle', '-.', 'Color', 'black')
+            legend('Nozzle', 'Rotor')
+
+            x = xlabel('Axial Length $\left[\mathrm{m}\right]$');
+            y = ylabel('Radius $\left[\mathrm{m}\right]$');
+            t = title('Meridional Flow Path');
+
+            prop_vector = [x, y, t];
+            property_cell = {'Interpreter', 'FontSize'};
+            [value_cell{1:length(prop_vector), 1}] = deal('latex');
+            [value_cell{1:length(prop_vector), 2}] = deal(12);
+            set(prop_vector, property_cell, value_cell)
+            f.GraphicsSmoothing = 'on';
+            utilities.savefig(f)
+        end
     end
 
     methods
@@ -138,6 +179,19 @@ classdef Turbine < definitions.Constants
             % the stages. Repeating stage assumption.
             Ws = obj.inflow.cp*(obj.inflow.T0 - obj.outflow.T0);
             value = Ws/obj.N; % Dividing specific work equally
+        end
+        
+        function value = get.area(obj)
+            if obj.stages_complete
+                value = 0;
+                for stage=obj.stages'
+                    stg = stage{1,1};
+                    geom = stg.geometry; 
+                    value = geom.nozzle.area + geom.rotor.area;                
+                end
+            else
+                error('Cannot compute area before stages are built')
+            end
         end
         
     end

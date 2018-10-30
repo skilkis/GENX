@@ -20,7 +20,7 @@ classdef Stage < definitions.Constants
         R                       % Degree of Reaction [-]
         inflow                  % Inflow State Variables
         index                   % Order of the stage within the Turbine
-        A                       % Aspect Ratio H/l
+        A = 1.5                 % Aspect Ratio H/l [-]
     end
     
     properties (Dependent, SetAccess = private)
@@ -40,6 +40,9 @@ classdef Stage < definitions.Constants
         eta_tt                  % Estimated Total-to-Total Efficiency [-]
         midflow                 % Intermediate Flow State Variables [-]
         outflow                 % Outflow State Variables [-]
+        bnd_points              % Bounding Points of the Stage
+        geometry                % Blade Length/Heights [m]
+        
     end
     
     methods
@@ -206,6 +209,47 @@ classdef Stage < definitions.Constants
             fc = @definitions.FlowCondition; % Renaming for clarity
             value = fc('p0', p0,'T0', T0,'m_dot', in.m_dot,'V', in.V,...
                        'medium', in.medium,'s', s,'h', h);
+        end
+        
+        function value = get.geometry(obj)
+            value = struct();
+            rho = [obj.inflow.rho, obj.midflow.rho, obj.outflow.rho];
+            
+            % Formatting geometry struct w/ Blade Heights
+            H = obj.inflow.m_dot ./ ((2 * pi * obj.r_m * obj.c_x) .* rho);
+            value.nozzle.H_start = H(1);
+            value.nozzle.H_end = H(2);
+            value.rotor.H_start = H(2);
+            value.rotor.H_end = H(3);
+            
+            % Blade Lengths
+            L = H / obj.A;
+            value.nozzle.L = L(1);
+            value.rotor.L = L(2);
+           
+
+            % Nozzle Row
+            x = [0, 0, L(1), L(1), 0];
+            y = [obj.r_m + 0.5*H(1),obj.r_m - 0.5*H(1),...
+                obj.r_m - 0.5*H(2), obj.r_m + 0.5*H(2),...
+                obj.r_m + 0.5*H(1)];
+            [~, area] = convhull(x,y);
+            value.nozzle.area = area;
+            value.nozzle.x = x;
+            value.nozzle.y = y;
+            value.nozzle.spacing = 0.1*((L(2)+L(3))/2);
+
+            % Rotor Row, Spacing = 10% of Average Chord
+            ref = value.nozzle.spacing + value.nozzle.L;
+            x = [ref, ref, ref + L(2), ref + L(2), ref];
+            y = [obj.r_m + 0.5*H(2),obj.r_m - 0.5*H(2),...
+                obj.r_m - 0.5*H(3), obj.r_m + 0.5*H(3),...
+                obj.r_m + 0.5*H(2)];
+            [~, area] = convhull(x,y);
+            value.rotor.area = area;
+            value.rotor.x = x;
+            value.rotor.y = y;
+            value.rotor.spacing = 0.1*((L(2)+L(3))/2);
         end
     end
 
