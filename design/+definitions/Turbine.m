@@ -10,6 +10,7 @@ classdef Turbine < definitions.Constants
         N                       % Number of Stages [-]
         RPM                     % Revolutions Per Minute [rev/min]
         PI                      % Expansion Ratio [-]
+        A = 1.5                 % Aspect Ratio H/l [-]
     end
 
     properties (SetAccess = private)
@@ -42,7 +43,7 @@ classdef Turbine < definitions.Constants
             exclude = fieldnames(definitions.Constants)';
             exclude = [exclude, 'inflow', 'outflow', 'omega', 'eta_p',...
                        'w', 'stages', 'converged', 'stages_complete',...
-                       'mach_known'];
+                       'mach_known', 'A'];
             for prop = fieldnames(obj)'
                 if ~any(strcmp(exclude, prop{:}))
                     addRequired(args, prop{:})
@@ -62,6 +63,51 @@ classdef Turbine < definitions.Constants
             obj = obj.buildStages();
         end
 
+        function f = plotEnthalpy(obj)
+            if ~obj.stages_complete
+                error('Plot requested before analysis completed');
+            end
+            f = figure('Name', 'EnthalpyEntropy');
+            grid on; grid minor; hold on;
+            points = zeros(2*obj.N+1,2);
+            for i=1:obj.N
+                stage = obj.stages{i,1};
+                idx = i - 1;
+                points(2*idx+1,1) = stage.inflow.s;
+                points(2*idx+1,2) = stage.inflow.h;
+                
+                points(2*idx+2,1) = stage.midflow.s;
+                points(2*idx+2,2) = stage.midflow.h;
+                
+                if i==obj.N
+                    points(2*idx+3,1) = stage.outflow.s;
+                    points(2*idx+3,2) = stage.outflow.h;
+                end
+            %     plot(stage{1,1}.)
+            end
+            plot(points(:,1), points(:,2), 'Marker', 'o',...
+                'MarkerFaceColor', 'white')
+            
+            x = xlabel(['Entropy $\left[\frac{\mathrm{J}}'...
+                        '{\mathrm{kg \cdot K}}\right]$']);
+            y = ylabel(['Stagnation Enthalpy $\left[\frac{\mathrm{kJ}}'...
+                        '{\mathrm{kg}}\right]$']);
+            t = title(['Entropy-Enthalpy Diagram'...
+                        ' $\left(N_\mathrm{stages} ='...
+                        num2str(obj.N) '\right)$']);
+
+            prop_vector = [x, y, t];
+            property_cell = {'Interpreter', 'FontSize'};
+            [value_cell{1:length(prop_vector), 1}] = deal('latex');
+            [value_cell{1:length(prop_vector), 2}] = deal(12);
+            set(prop_vector, property_cell, value_cell)
+            f.GraphicsSmoothing = 'on';
+            utilities.savefig(f)
+        end
+        
+        function f = plotVelocityDiagram(obj)
+            f = obj.stages{1,1}.plotVelocityDiagram();
+        end
     end
 
     methods
@@ -135,11 +181,11 @@ classdef Turbine < definitions.Constants
             tic;
             options = optimoptions('lsqnonlin','Display','iter');
             x = lsqnonlin(@obj.objective, 0.9, 0, 1, options);
-            disp(x);
             obj.eta_p = x;
             obj.converged = true;
             t = toc;
-            fprintf('Polytropic Eff. Solver Took:  %0.3f [s]', t)
+            fprintf('Polytropic Eff. Solver Took:  %0.3f [s]\n', t)
+            fprintf('Converged Value eta_p = %0.4f [-]\n', obj.eta_p)
         end
         
         function obj = buildStages(obj)

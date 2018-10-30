@@ -38,7 +38,7 @@ classdef Stage < definitions.Constants
         zeta_n                  % Nozzle Solderberg Loss Coefficient [-]
         zeta_r                  % Rotor Solderberg Loss Coefficient [-]
         eta_tt                  % Estimated Total-to-Total Efficiency [-]
-        intflow                 % Intermediate Flow State Variables [-]
+        midflow                 % Intermediate Flow State Variables [-]
         outflow                 % Outflow State Variables [-]
     end
     
@@ -63,7 +63,7 @@ classdef Stage < definitions.Constants
 
         function f = plotVelocityDiagram(obj)
             f = figure('Name', 'VelocityDiagram');
-            hold on; grid on;
+            hold on; grid on; grid minor;
             c2 = obj.c_2 / obj.U;
             w2 = obj.w_2 / obj.U;
             c3 = obj.c_1 / obj.U; % c_1 = c_3 due to repeating stage
@@ -93,8 +93,8 @@ classdef Stage < definitions.Constants
 
             set(gca,'Xdir', 'reverse','Ydir','reverse')
             l = legend('$c_2$', '$w_2$', '$c_3$', '$w_3$', '$U$');
-            x = xlabel('Normalized Tangential Velocity');
-            y = ylabel('Normalized Axial Velocity');
+            x = xlabel('Normalized Tangential Velocity $\left[-\right]$');
+            y = ylabel('Normalized Axial Velocity $\left[-\right]$');
             t = title(['Velocity Diagram $\left( \psi=' num2str(obj.psi)... 
                        ', \phi=' num2str(obj.phi)...
                        ', R=' num2str(obj.R) '\right)$']);
@@ -173,36 +173,39 @@ classdef Stage < definitions.Constants
             value = 1/(1 + (obj.zeta_r*(obj.w_3^2) + ...
                     obj.zeta_n*(obj.c_2^2))/(2*obj.w));
         end
+        
+        function value = get.midflow(obj)
+            in = obj.inflow; out = obj.outflow;
+            dh_tot = in.h - out.h;
+            dh_n = (1 - obj.R) * dh_tot;
+            h = in.h - dh_n;
+            T0 = (- dh_n * 1000 / in.cp) + in.T0;
+            p0 = in.p0 * ((1 + ((1/obj.eta_tt) *((T0/in.T0) -...
+                 1.)))^(in.kappa /(in.kappa - 1.)));
+            
+            % Obtaining Entropy Value
+            s = in.s + in.cp*log(T0/in.T0) - in.gas_constant*log(p0/in.p0);
+            fc = @definitions.FlowCondition; % Renaming for clarity
+            value = fc('p0', p0,'T0', T0,'m_dot', in.m_dot,'V', in.V,...
+                       'medium', in.medium,'s', s,'h', h);
+        end
 
         function value = get.outflow(obj)
-            in = obj.inflow;
-%             value = definitions.FlowCondition('mach', in.mach,...
-%                                               'a', in.a,...
-%                                               'p0', in.p0,...
-%                                               'p', in.p,...
-%                                               'T0', in.T0,...
-%                                               'T', in.T,...
-%                                               'rho', in.rho,...
-%                                               'm_dot', in.m_dot,...
-%                                               'V', in.V,...
-%                                               'medium', in.medium,...
-%                                               's', in.s,...
-%                                               'h', in.h);
             
-            % Calculates new states
+            % Obtains the outflow state variables
+            in = obj.inflow;
+            
+            % Obtaining Total Temperature & Pressure
             T0 = in.T0 - (obj.w / in.cp);
             p0 = in.p0 * ((1 + ((1/obj.eta_tt) *((T0/in.T0) -...
-             1.)))^(in.kappa /(in.kappa - 1.)));
+                 1.)))^(in.kappa /(in.kappa - 1.)));
+         
+            % Obtaining Enthalpy/Entropy Change from Stagnation Quantities
             s = in.s + in.cp*log(T0/in.T0) - in.gas_constant*log(p0/in.p0);
             h = in.h + in.cp/1000*(T0-in.T0);
-             
-            value = definitions.FlowCondition('p0', p0,...
-                                              'T0', T0,...
-                                              'm_dot', in.m_dot,...
-                                              'V', in.V,...
-                                              'medium', in.medium,...
-                                              's', s,...
-                                              'h', h);
+            fc = @definitions.FlowCondition; % Renaming for clarity
+            value = fc('p0', p0,'T0', T0,'m_dot', in.m_dot,'V', in.V,...
+                       'medium', in.medium,'s', s,'h', h);
         end
     end
 
