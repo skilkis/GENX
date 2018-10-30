@@ -25,6 +25,7 @@ classdef Turbine < definitions.Constants
         outflow                 % Outflow state variables
         w                       % Specific Work per Stage
         area                    % Total Cross-Sectional Area
+        max_mach                % Maximum Mach Number
     end
     
     methods
@@ -43,7 +44,7 @@ classdef Turbine < definitions.Constants
             exclude = fieldnames(definitions.Constants)';
             exclude = [exclude, 'inflow', 'outflow', 'omega', 'eta_p',...
                        'w', 'stages', 'converged', 'stages_complete',...
-                       'mach_known', 'area'];
+                       'mach_known', 'area', 'max_mach'];
             for prop = fieldnames(obj)'
                 if ~any(strcmp(exclude, prop{:}))
                     addRequired(args, prop{:})
@@ -99,7 +100,7 @@ classdef Turbine < definitions.Constants
             prop_vector = [x, y, t];
             property_cell = {'Interpreter', 'FontSize'};
             [value_cell{1:length(prop_vector), 1}] = deal('latex');
-            [value_cell{1:length(prop_vector), 2}] = deal(12);
+            [value_cell{1:length(prop_vector), 2}] = deal(14);
             set(prop_vector, property_cell, value_cell)
             f.GraphicsSmoothing = 'on';
             utilities.savefig(f)
@@ -132,7 +133,7 @@ classdef Turbine < definitions.Constants
             r_m = stg.r_m;
 
             axis([-pad_x, max(x)+pad_x,...
-                (r_m-0.5*max(y))-pad_y, (r_m + 0.5*max(y))+pad_y])
+                (r_m-0.1*max(y))-pad_y, (r_m + 0.1*max(y))+pad_y])
             x_lim = get(gca,'XLim');  %# Get the range of the x axis
             line(x_lim, [r_m, r_m], 'LineStyle', '-.', 'Color', 'black')
             legend('Nozzle', 'Rotor')
@@ -144,7 +145,7 @@ classdef Turbine < definitions.Constants
             prop_vector = [x, y, t];
             property_cell = {'Interpreter', 'FontSize'};
             [value_cell{1:length(prop_vector), 1}] = deal('latex');
-            [value_cell{1:length(prop_vector), 2}] = deal(12);
+            [value_cell{1:length(prop_vector), 2}] = deal(14);
             set(prop_vector, property_cell, value_cell)
             f.GraphicsSmoothing = 'on';
             utilities.savefig(f)
@@ -191,6 +192,13 @@ classdef Turbine < definitions.Constants
                 end
             else
                 error('Cannot compute area before stages are built')
+            end
+        end
+        
+        function value = get.max_mach(obj)
+            if obj.stages_complete
+                mach = cellfun(@(x) x.outflow.mach,obj.stages);
+                value = max(mach);
             end
         end
         

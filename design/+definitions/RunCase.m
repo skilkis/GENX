@@ -44,8 +44,9 @@ classdef RunCase < handle
             obj.get_turbine(x);
             % Peripheral Speed Constraint
             c1 = obj.cache.turbine.stages{1,1}.U - 750;
+            c2 = obj.cache.turbine.max_mach - 2.5;
 %             c2 = obj
-            c = c1;
+            c = [c1, c2];
         end
 %         
         function fval = objective(obj, x)

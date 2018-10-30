@@ -105,7 +105,7 @@ classdef Stage < definitions.Constants
             prop_vector = [l, x, y, t];
             property_cell = {'Interpreter', 'FontSize'};
             [value_cell{1:length(prop_vector), 1}] = deal('latex');
-            [value_cell{1:length(prop_vector), 2}] = deal(12);
+            [value_cell{1:length(prop_vector), 2}] = deal(14);
             set(prop_vector, property_cell, value_cell)
             f.GraphicsSmoothing = 'on';
             utilities.savefig(f)
@@ -237,7 +237,7 @@ classdef Stage < definitions.Constants
             value.nozzle.area = area;
             value.nozzle.x = x;
             value.nozzle.y = y;
-            value.nozzle.spacing = 0.1*((L(2)+L(3))/2);
+            value.nozzle.spacing = 0.5*((L(1)+L(2))/2);
 
             % Rotor Row, Spacing = 10% of Average Chord
             ref = value.nozzle.spacing + value.nozzle.L;
@@ -249,7 +249,7 @@ classdef Stage < definitions.Constants
             value.rotor.area = area;
             value.rotor.x = x;
             value.rotor.y = y;
-            value.rotor.spacing = 0.1*((L(2)+L(3))/2);
+            value.rotor.spacing = 0.5*((L(2)+L(3))/2);
         end
     end
 

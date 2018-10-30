@@ -57,9 +57,9 @@ opt_turbine = runs{1,I}.turbine;
 fprintf(['Solver Converged! Polytropic Efficiency = %0.4f \n'...
          'N = %d, psi = %0.2f, phi = %0.2f, R = %0.2f'],...
           M, I, opt_turbine.psi, opt_turbine.phi, opt_turbine.R)
-% opt_turbine.plotVelocityDiagram();
-% opt_turbine.plotFlowPath();
-% opt_turbine.plotEnthalpy();
+opt_turbine.plotVelocityDiagram();
+opt_turbine.plotFlowPath();
+opt_turbine.plotEnthalpy();
 
 
 %% Plotting Efficiency Figure
@@ -73,7 +73,7 @@ t = title('Polytropic Efficiency as a Function of Stage Count');
 prop_vector = [x, y, t];
 property_cell = {'Interpreter', 'FontSize'};
 [value_cell{1:length(prop_vector), 1}] = deal('latex');
-[value_cell{1:length(prop_vector), 2}] = deal(12);
+[value_cell{1:length(prop_vector), 2}] = deal(14);
 set(prop_vector, property_cell, value_cell)
 f.GraphicsSmoothing = 'on';
 utilities.savefig(f)
@@ -89,7 +89,7 @@ t = title('Turbine Area as a Function of Stage Count');
 prop_vector = [x, y, t];
 property_cell = {'Interpreter', 'FontSize'};
 [value_cell{1:length(prop_vector), 1}] = deal('latex');
-[value_cell{1:length(prop_vector), 2}] = deal(12);
+[value_cell{1:length(prop_vector), 2}] = deal(14);
 set(prop_vector, property_cell, value_cell)
 f.GraphicsSmoothing = 'on';
 utilities.savefig(f)
