@@ -8,7 +8,6 @@ DesignVector = @definitions.DesignVector; % TODO use this to make
 RunCase = @definitions.RunCase;
 
 %% Provided Parameters in Assignment III
-% global psi phi R N RPM PI
 data.inflow = FlowCondition('p0', 11e5,...
                             'T0', 1400,...
                             'm_dot', 8.2,...
@@ -29,13 +28,13 @@ x0 = DesignVector({'psi', 1.5, 0.5, 3.0;
 options.Display         = 'iter-detailed';
 options.Algorithm       = 'sqp';
 options.FunValCheck     = 'off';
-options.DiffMinChange   = 1e-3;         % Minimum change while gradient searching
-options.DiffMaxChange   = 1e-2;         % Maximum change while gradient searching
-options.TolCon          = 1e-6;         % Maximum difference between two subsequent constraint vectors [c and ceq]
-options.TolFun          = 1e-6;         % Maximum difference between two subsequent objective value
-options.TolX            = 1e-6;         % Maximum difference between two subsequent design vectors
+options.DiffMinChange   = 1e-3;         % Minimum delta
+options.DiffMaxChange   = 1e-2;         % Maximum delta
+options.TolCon          = 1e-6;         % Constraint Tolerance
+options.TolFun          = 1e-6;         % Objective Function Tolerance
+options.TolX            = 1e-6;         % Design Vector Tolerance
 
-options.MaxIter         = 100;           % Maximum iterations
+options.MaxIter         = 100;          % Maximum Iterations
               
 %% Defining Run-case for Number of Stages from 1-10
 tic
