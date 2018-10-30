@@ -5,7 +5,7 @@ close all
 
 global kappa eta_tt
 psi = 0.5;
-R = 0.5;
+R = 0.1;
 phi = 0.4;
 
 %% Obtaining Velocity Triangles
@@ -37,7 +37,7 @@ zeta_n = 0.04 * (1 + 1.5 * (epsilon_n / 100)^2);
 zeta_r = 0.04 * (1 + 1.5 * (epsilon_r / 100)^2);
 
 %% step 1 - input entry
-pin = 11e5; % inlet pressure
+p_in = 11e5; % inlet pressure
 Tin = 1400; % inlet temperature
 PI = 9.3; % pressure ratio
 mf = 8.2; % mass flow
@@ -47,14 +47,14 @@ kappa = 1.33;
 R = 287; % gas constant
 
 %% Calculating Specific Work from Guessed Polytropic Efficiency
-eta_p = 0.85; % Guessed polytropic efficiency (chosen)
+eta_p = 0.910; % Guessed polytropic efficiency (chosen)
 
 Tout = Tin*(1/PI)^((kappa-1)/kappa*eta_p); % outlet temperature
-pout = pin/PI; % outlet pressure
+pout = p_in/PI; % outlet pressure
 Ws = cp*(Tin - Tout); % Specific work
 
 %% step 4 - number of stage(s) selection
-N = 1; % number of stages (chosen)
+N = 5; % number of stages (chosen)
 w = Ws/N; % specific work per stage (Check this value)
 
 %% step 5 - velocity triangles 
@@ -80,7 +80,7 @@ w_3 = c_x / cos(beta_3);
 eta_tt = 1/(1 + (zeta_r*(w_3^2) + zeta_n*(c_2^2))/(2*w));
 
 %% Obtaining Actual Polytropic Efficiency
-p_start = pin;
+p_start = p_in;
 T = linspace(Tin, Tout, N+1);
 disp(T)
 for i = 1:N
@@ -90,7 +90,7 @@ for i = 1:N
     p_start = p_end;
 end
 
-eta_p_final = (kappa/(kappa-1)) * log(Tin/Tout) / log(p_end/pin);
+eta_p_final =  (kappa / (kappa - 1)) * (log(Tout/Tin) / log(p_end/p_in));
 
 
 

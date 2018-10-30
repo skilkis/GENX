@@ -1,11 +1,15 @@
 classdef DesignVector < dynamicprops
-    %DESIGNVECTOR Summary of this class goes here
-    %   Detailed explanation goes here
-    % TODO add explanation here
+    %DESIGNVECTOR Utility class allowing key, value pairs
+    %   Solves the hassle of having to remember indices w/ fmincon
 
     properties
-        x0                      % Initial Values of the Design Vector
-        keys                    % Design Names
+        x0                  % Initial Values of the Design Vector
+        x                   % Current Values of the Design Vector
+    end
+    
+    properties (SetAccess = private, GetAccess = private)
+        keys                % Design Vector Keys
+        cell                % Input cell containing key, value pairs
     end
     
     methods
@@ -15,17 +19,23 @@ classdef DesignVector < dynamicprops
 %         obj.vector = [psi, phi, R, N];
 %     end
 
-        function obj = DesignVector(x0, keys)
+        function obj = DesignVector(cell)
+            
+            obj.cell = cell;
 
-            obj.x0 = x0;
-            obj.keys = keys;
-
+            obj.x0 = cell2mat(cell(:,2)); obj.x = obj.x0;
+            obj.keys = cell(:,1);
+            
             index = 1;
-            for key = keys'
+            for key = obj.keys'
                 P = addprop(obj, key{:});
-                P.GetMethod = @(x) obj.data(index);
+                P.GetMethod = @(getter) obj.x(index);
                 index = index + 1;
             end
+        end
+        
+        function value = normalize(obj)
+            value = obj.x ./ obj.x0;
         end
 
     %  function obj = DesignVector(data, keys)

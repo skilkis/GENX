@@ -25,7 +25,7 @@ classdef FlowCondition < definitions.Constants
         cache = struct()    % Caches set variables to prevent recursion
     end
     
-    properties (Dependent, GetAccess = private, SetAccess = private)
+    properties (Dependent, SetAccess = private)
         kappa               % Spec. Heat Ratio of Medium [-]
         p_ratio             % Total Pressure to Static Pressure Ratio
         t_ratio             % Total Temperature to Static Temperature Ratio
@@ -37,7 +37,8 @@ classdef FlowCondition < definitions.Constants
             % Creates optional arguments for all state variables
             args = inputParser; % Analyzes passed arguments
             exclude = fieldnames(definitions.Constants)';
-            exclude = [exclude, 'cache'];
+            exclude = [exclude, 'cache', 'kappa', 'p_ratio', 't_ratio',...
+                       'cp'];
             for prop = fieldnames(obj)'
                 if ~any(strcmp(exclude, prop{:}))
                     addOptional(args, prop{:}, NaN)
@@ -179,7 +180,7 @@ classdef FlowCondition < definitions.Constants
             % func = Function on how to fetch the property
             if isnan(prop)
                 value = func(obj);
-                if isnan(value);
+                if isnan(value)
                     error(['Function: %s failed, check'...
                     'state variables'], func2str(func))
                 end
@@ -191,6 +192,10 @@ classdef FlowCondition < definitions.Constants
         function obj = update_cache(obj, key, value)
             % Uses key, value pair to update cache entry
             obj.cache.(key) = value;
+        end
+        
+        function obj = update_state(obj, key, value)
+            obj.(key) = value;
         end
     end
 end

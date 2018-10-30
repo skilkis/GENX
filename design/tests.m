@@ -10,19 +10,23 @@ close all
 % obj_test.value = 8;
 % obj_test.value = 10;
 % 
-% obj = definitions.FlowCondition('medium','gas',...
-%                                 'T0', 288.15,...
-%                                 'p', 101325);
+inflow = definitions.FlowCondition('medium','gas',...
+                                'T0', 288.15,...
+                                'p', 101325);
+                            
+eta_tt = 0.92;
+psi = 1.0;
+phi = 1.2;
+R = 0.5;
+w = 604063.335547300;
+omega = 35e3;
+
+psi = 1.5;
+R = 0.26;
+phi = 1.81;
 %                             
 % stage = definitions.Stage(obj);
-% stage.inflow.T
 
-x0 = definitions.DesignVector([0, 1, 3], {'lalal'});
-
-% a1 = 2; a2 = 1.5; % define parameters first
-options = optimset('Display', 'iter', 'Algorithm', 'sqp');
-x = fmincon(@(x) x(0)^2 + x(1) ^2, x0.x0,[],[],[],[],[],[],[],options);
-
-x0.lalal
-
-x0.data(1) = 2;
+            
+Stage = definitions.Stage(inflow, omega, psi, phi, R, w);
+fhandle = Stage.plotVelocityDiagram();
