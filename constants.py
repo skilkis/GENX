@@ -51,7 +51,7 @@ class Constants(object):
 
     @Attribute
     def specific_heat_air(self):
-        """ Specific Heat of Air at Constant Pressure c_p in SI Joule per kilogram Kelvin[J/kg K] """
+        """ Specific Heat of Air at Constant Pressure c_p in SI Joule per kilogram Kelvin [J/kg K] """
         return 1000.
 
     @Attribute
