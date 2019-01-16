@@ -108,7 +108,8 @@ def get_dir(folder_name=None):
 DIRS = {'ENGINE_DIR': get_dir('engine/data'),
         'CSV_DIR': get_dir('analysis/output'),
         'ENTROPY_TABLE_DIR': get_dir('analysis/cache/entropy_table.dat'),
-        'FIGURE_DIR': get_dir('analysis/figures')}
+        'FIGURE_DIR': get_dir('analysis/figures'),
+        'DATA_DIR': get_dir('analysis/data')}
 
 if __name__ == '__main__':
-    print(get_dir('user'))
+    print(get_dir('analysis/data'))

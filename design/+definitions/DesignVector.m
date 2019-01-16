@@ -4,7 +4,7 @@ classdef DesignVector < dynamicprops
 
     properties
         init                % Initial Values of the Design Vector
-        data                % Current Values of the Design Vector
+        vector              % Current Design Vector
     end
     
     properties (SetAccess = private, GetAccess = private)
@@ -28,7 +28,8 @@ classdef DesignVector < dynamicprops
             
             obj.cell = cell;
 
-            obj.init = cell2mat(cell(:,2)); obj.data = obj.init;
+            obj.init = cell2mat(cell(:,2));
+            obj.vector = ones(length(obj.init));
             obj.keys = cell(:,1);
             obj.lb = cell2mat(cell(:,3));
             obj.ub = cell2mat(cell(:,4));
@@ -36,13 +37,10 @@ classdef DesignVector < dynamicprops
             index = 1;
             for key = obj.keys'
                 P = addprop(obj, key{:});
-                P.GetMethod = @(getter) obj.data(index);
+                P.GetMethod = @(getter) obj.vector(index) * ...
+                                         obj.init(index);
                 index = index + 1;
             end
-        end
-        
-        function value = normalize(obj)
-            value = obj.x ./ obj.x0;
         end
 
     %  function obj = DesignVector(data, keys)
