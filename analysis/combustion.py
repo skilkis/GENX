@@ -103,8 +103,9 @@ class CombustionAnalysis(object):
     def heat_density(self):
         """ Obtains the heat density of the combustion chamber in SI Watt per meter cubed [W/m^3] """
         pr_cc, v_cc = self.chamber_specs.pressure_loss, self.chamber_specs.can_volume
-        return [cond.heat_output / (v_cc * (0.5 * (1. + pr_cc)) * cond.inflow.p_total)
-                for cond in self.operating_conditions]
+        # return [cond.heat_output / (v_cc * (0.5 * (1. + pr_cc)) * cond.inflow.p_total)
+        #         for cond in self.operating_conditions]
+        return [cond.heat_output / v_cc for cond in self.operating_conditions]
 
     @Attribute
     def equivalence_ratios(self):
@@ -114,7 +115,7 @@ class CombustionAnalysis(object):
         """
         amf, oc = self.chamber_specs.air_mass_fractions, self.operating_conditions  # Localizing variables
         afr_st = self.operating_conditions[0].afr_stoichiometric
-        return [{zone: afr_st * (c.fuel_flow/(frac * c.inflow.mass_flow)) for zone, frac in amf} for c in oc]
+        return [{zone: afr_st * (c.fuel_flow/(frac * c.inflow.mass_flow)) for zone, frac in amf.items()} for c in oc]
 
     def parse_data(self):
         """ Transforms the experimental data of the current engine into a dictionary containing flow properties at
@@ -134,11 +135,47 @@ class CombustionAnalysis(object):
                 # TODO add a more comprehensive input file reading/checking mechanism
                 raise e
 
+    def write_csv(self):
+        """ Writes an output .csv file containing data from the analysis of the current combustion chamber """
+        with open(os.path.join(DIRS['CSV_DIR'], '{}_combustion.csv'.format(self.engine_name)), 'w') as csv:
+            csv.write('condition, fuel_flow, phi_bar, heat_density, phi_pz, phi_sz, phi_dz\n')
+            e = self.equivalence_ratios
+            for i, c in enumerate(self.operating_conditions):
+                data_tuple = (c.name, c.fuel_flow, c.equivalence_ratio, self.heat_density[i] / 1e6, e[i]['pz'],
+                              e[i]['sz'], e[i]['dz'])
+                csv.write('{}\n'.format(','.join(map(str, data_tuple))))
+
+    def plot_overall(self):
+        def subplot_style(axis, xlabel='', ylabel='', legend=True, sci=False):
+            axis.yaxis.set_tick_params(labelsize=7, pad=1)
+            axis.xaxis.set_tick_params(labelsize=7)
+            axis.set_xlabel(xlabel)
+            axis.set_ylabel(ylabel, labelpad=0)
+            if legend:
+                axis.legend(loc='best', fontsize=7)
+            if sci:
+                axis.ticklabel_format(style='sci', scilimits=(-3, 4), axis='y')
+            # axis.grid(b=True, which='both', linestyle='-')
+
+        # fig = plt.figure('%s_convergence' % self.run_case, figsize=(7.2, 7.2))
+        plt.style.use('tudelft')
+        fig, (ax0, ax1, ax2) = plt.subplots(3, 1, num='{}_overall'.format(self.engine_name), sharex='all',
+                                            gridspec_kw={'top': 0.95, 'hspace': 0.15}, figsize=(7.2, 7.2))
+        fig.set_tight_layout(False)
+
+        subplot_style(ax0, '', r'Mass & Momentum')
+
+    def plot_zones(self):
+        return None
+
 
 if __name__ == '__main__':
     obj = CombustionAnalysis()
-    obj.parse_data()
-    print(obj.heat_density)
-    for c in obj.operating_conditions:
-        print(c.equivalence_ratio)
+    # obj.parse_data()
+    print(obj.equivalence_ratios)
+    # print(obj.heat_density)
+    # for c in obj.operating_conditions:
+    #     print(c.equivalence_ratio)
+
+    obj.write_csv()
 
