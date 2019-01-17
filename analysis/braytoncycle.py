@@ -326,6 +326,6 @@ class BraytonCycle(object):
 
 if __name__ == '__main__':
     from engine import Engine
-    obj = BraytonCycle(engine_in=Engine(filename='GENX.cfg', ideal_cycle=True))
+    obj = BraytonCycle(engine_in=Engine(filename='GE90.cfg', ideal_cycle=True))
     resp = obj.specific_entropy
     obj.plot()

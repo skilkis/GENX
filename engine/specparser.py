@@ -17,7 +17,7 @@ __author__ = 'San Kilkis'
 # TODO finish documenting, mach, p_static, t_static
 
 
-class SpecParser(object):
+class SpecReader(object):
 
     __default_directory__ = DIRS['ENGINE_DIR']
 
@@ -45,6 +45,9 @@ class SpecParser(object):
         for section in cfg.sections():
             entries += cfg.items(section)
         return dict(entries)
+
+
+class SpecParser(SpecReader):
 
     @Attribute
     def ambient(self):

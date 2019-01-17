@@ -295,7 +295,7 @@ class SankeyDiagram(object):
 
 if __name__ == '__main__':
     from engine import Engine
-    obj = SankeyDiagram(engine_in=Engine(filename='GENX.cfg', ideal_cycle=True))
+    obj = SankeyDiagram(engine_in=Engine(filename='GE90.cfg', ideal_cycle=True))
     print('Gas Generator Temperature: {} [K]'.format(obj.temperature_g))
     print('Total Pressure Gas Generator: {} [Pa]'.format(obj.pressure_g))
     print('Chemical Power: {} [W]'.format(obj.chemical_power))

@@ -79,6 +79,11 @@ class Constants(object):
         """ Universal Gas Constant in SI Joule per kilogram Kelvin [J/kg K] """
         return 287.05
 
+    @Attribute
+    def afr_stoichiometric(self):
+        """ Determines the dimensionless stoichiometric air-to-fuel ratio (AFR) of Kerosene (Reader pg. 95) """
+        return 14.66
+
 
 if __name__ == '__main__':
     obj = Constants()

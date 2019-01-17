@@ -20,7 +20,7 @@ __author__ = 'San Kilkis'
 
 class Engine(SpecParser):
 
-    def __init__(self, filename='GENX.cfg', ideal_cycle=False, design_variable=None, design_range=None,
+    def __init__(self, filename='PW4056_specs.cfg', ideal_cycle=False, design_variable=None, design_range=None,
                  ambient=None):
         """
         :param str filename: Filename w/ extension of desired engine
