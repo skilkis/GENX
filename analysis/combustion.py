@@ -34,6 +34,15 @@ class ChamberSpecs(SpecReader):
         """
         return {key.split('_')[-1]: float(self.reader[key]) for key in ('amf_pz', 'amf_sz', 'amf_dz')}
 
+    @Attribute
+    def fuel_mass_fractions(self):
+        """ Determines the fuel mass-flow fraction of the Primary Zone (PZ), Secondary Zone (SZ), and Dilution Zone (DZ)
+        Therefore, multiplying by this factor will yield the available fuel mass flow in the specified zone.
+
+        :rtype: dict
+        """
+        return {key.split('_')[-1]: float(self.reader[key]) for key in ('fmf_pz', 'fmf_sz', 'fmf_dz')}
+
 
 class OperatingCondition(Stage):
 
@@ -113,9 +122,10 @@ class CombustionAnalysis(object):
 
         :rtype: list[dict]
         """
-        amf, oc = self.chamber_specs.air_mass_fractions, self.operating_conditions  # Localizing variables
-        afr_st = self.operating_conditions[0].afr_stoichiometric
-        return [{zone: afr_st * (c.fuel_flow/(frac * c.inflow.mass_flow)) for zone, frac in amf.items()} for c in oc]
+        amf, fmf = self.chamber_specs.air_mass_fractions, self.chamber_specs.fuel_mass_fractions  # Localizing variables
+        afr_st, oc = self.operating_conditions[0].afr_stoichiometric, self.operating_conditions
+        return [{zone: afr_st * ((c.fuel_flow * fmf[zone])/(frac * c.inflow.mass_flow))
+                 for zone, frac in amf.items()} for c in oc]
 
     def parse_data(self):
         """ Transforms the experimental data of the current engine into a dictionary containing flow properties at
@@ -146,11 +156,15 @@ class CombustionAnalysis(object):
                 csv.write('{}\n'.format(','.join(map(str, data_tuple))))
 
     def plot_overall(self):
-        def subplot_style(axis, xlabel='', ylabel='', legend=True, sci=False):
+        """ Plots the parameters which result in overall quantities on the combustion process (fuel flow, ov.
+        equivalence ratio, and heat density """
+
+        def subplot_style(axis, xlabel='', ylabel='', legend=False, sci=False):
+            """ Sets the style of the subplots to avoid repetitive code """
             axis.yaxis.set_tick_params(labelsize=7, pad=1)
             axis.xaxis.set_tick_params(labelsize=7)
             axis.set_xlabel(xlabel)
-            axis.set_ylabel(ylabel, labelpad=0)
+            axis.set_ylabel(ylabel, labelpad=2)
             if legend:
                 axis.legend(loc='best', fontsize=7)
             if sci:
@@ -158,21 +172,51 @@ class CombustionAnalysis(object):
             # axis.grid(b=True, which='both', linestyle='-')
 
         # fig = plt.figure('%s_convergence' % self.run_case, figsize=(7.2, 7.2))
-        plt.style.use('tudelft')
+        plt.style.use('ggplot')
         fig, (ax0, ax1, ax2) = plt.subplots(3, 1, num='{}_overall'.format(self.engine_name), sharex='all',
                                             gridspec_kw={'top': 0.95, 'hspace': 0.15}, figsize=(7.2, 7.2))
         fig.set_tight_layout(False)
 
-        subplot_style(ax0, '', r'Mass & Momentum')
+        thrust_list = [c.net_thrust / 1e3 for c in self.operating_conditions]
+        ax0.plot(thrust_list, [c.fuel_flow for c in self.operating_conditions], marker='o')
+        subplot_style(ax0, '', r'Fuel-Flow $\dot{m}_f$ [kg/s]')
+
+        ax1.plot([], [])
+        ax1.plot(thrust_list, [c.equivalence_ratio for c in self.operating_conditions], marker='o')
+        subplot_style(ax1, '', r'Overall Eq. Ratio $\overline{\phi}$')
+
+        ax2.plot([], [])
+        ax2.plot([], [])
+        ax2.plot(thrust_list, [h for h in self.heat_density], marker='o')
+        subplot_style(ax2, 'Net Thrust [kN]', r'Heat Density $\Phi$ [$\mathrm{W\ m}^{-3}$]')
+
+        plt.show()
+        fig.savefig(fname=os.path.join(DIRS['FIGURE_DIR'], '%s.pdf' % fig.get_label()))
 
     def plot_zones(self):
-        return None
+        """ Plots the local equivalence ratio at the zones of the combustion chamber for all operating conditions """
+        fig = plt.figure(num='{}_zones'.format(self.engine_name))
+        plt.style.use('ggplot')
+
+        thrust_list = [c.net_thrust / 1e3 for c in self.operating_conditions]
+        plt.plot(thrust_list, [eq['pz'] for eq in self.equivalence_ratios], label='PZ', marker='o')
+        plt.plot(thrust_list, [eq['sz'] for eq in self.equivalence_ratios], label='SZ', marker='^')
+        plt.plot(thrust_list, [eq['dz'] for eq in self.equivalence_ratios], label='DZ', marker='x')
+
+        plt.xlabel('Net Thrust [kN]')
+        plt.ylabel('Local Equivalence Ratio [-]')
+        plt.legend(loc='best')
+        plt.show()
+
+        fig.savefig(fname=os.path.join(DIRS['FIGURE_DIR'], '%s.pdf' % fig.get_label()))
 
 
 if __name__ == '__main__':
     obj = CombustionAnalysis()
     # obj.parse_data()
     print(obj.equivalence_ratios)
+    obj.plot_overall()
+    obj.plot_zones()
     # print(obj.heat_density)
     # for c in obj.operating_conditions:
     #     print(c.equivalence_ratio)
